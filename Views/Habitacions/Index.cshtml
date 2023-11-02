@@ -8,21 +8,21 @@
 
 <h1>Listado de Habitaciones</h1>
 
-
-
+<!-- Botón para crear una nueva habitación -->
 <p>
-    <a asp-action="Create" class="btna btn-succes">Create New</a>
+    <a asp-action="Create" class="btna btn-succes">Crear Nueva</a>
 </p>
 
-
+<!-- Formulario para buscar habitaciones -->
 <form asp-controller="Habitacions" asp-action="Index">
     <p>
-        Buscar:<input type=" text " name="buscar" value="@ViewData["FiltroActual"]" class"form-text" />
-        <input type="submit" value="Buscar " class=" btn btn-sm btn-dark" />
-        <a asp-action="Index" class="btn btn-outline-info ">Lista completa </a>
+        Buscar:<input type="text" name="buscar" value="@ViewData["FiltroActual"]" class="form-text" />
+        <input type="submit" value="Buscar" class="btn btn-sm btn-dark" />
+        <a asp-action="Index" class="btn btn-outline-info">Lista completa</a>
     </p>
 </form>
 
+<!-- Tabla para mostrar las habitaciones -->
 <table class="table">
     <thead>
         <tr>
@@ -51,6 +51,7 @@
         </tr>
     </thead>
     <tbody>
+        <!-- Bucle para mostrar las habitaciones en la tabla -->
         @foreach (var item in Model)
         {
             <tr>
@@ -76,17 +77,17 @@
                     @Html.DisplayFor(modelItem => item.Vistas)
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.HabitacionId">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.HabitacionId">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.HabitacionId">Delete</a>
+                    <!-- Enlaces para editar, ver detalles y eliminar la habitación -->
+                    <a asp-action="Edit" asp-route-id="@item.HabitacionId">Editar</a> |
+                    <a asp-action="Details" asp-route-id="@item.HabitacionId">Detalles</a> |
+                    <a asp-action="Delete" asp-route-id="@item.HabitacionId">Eliminar</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-
-
+<!-- Controles para la paginación -->
 <div>
     <div style="display: inline-block; margin-right: 20px;">
         <a asp-action="Index" asp-route-ordenActual="NombreAscendente">Ordenar por Nombre</a>
@@ -97,30 +98,29 @@
     <div style="display: inline-block;">
         <a asp-action="Index" asp-route-ordenActual="CapacidadAscendente">Ordenar por Capacidad</a>
     </div>
-</div>
 
-
-
-
-@{
-    var anteriordeshabilitado = !Model.PaginasAnteriores ? "disabled" : "";
-    var siguientedeshabilitado = !Model.PaginasPosteriores ? "disabled" : "";
-}
-
-<div>
-    <a asp-action="Index" asp-route-ordenActual="@ViewData["OrdenActual"]"
-       asp-route-numpag="@(Model.PaginaInicio - 1)" asp-route-filtroActual="@ViewData["FiltroActual"]"
-       class="btn btn-primary @anteriordeshabilitado">Anterior </a>
-
-    @for (var i = 1; i <= Model.PaginasTotales; i++)
-    {
-        var paginaactiva = (i == Model.PaginaInicio) ? "active" : "";
-        <a asp-action="Index" asp-route-ordenActual="@ViewData["OrdenActual"]"
-       asp-route-numpag="@i" asp-route-filtroActual="@ViewData["FiltroActual"]"
-       class="btn btn-primary @paginaactiva">Página @i</a>
+    <!-- Botones para navegar entre páginas -->
+    @{
+        var anteriordeshabilitado = !Model.PaginasAnteriores ? "disabled" : "";
+        var siguientedeshabilitado = !Model.PaginasPosteriores ? "disabled" : "";
     }
 
-    <a asp-action="Index" asp-route-ordenActual="@ViewData["OrdenActual"]"
-       asp-route-numpag="@(Model.PaginaInicio + 1)" asp-route-filtroActual="@ViewData["FiltroActual"]"
-       class="btn btn-primary @siguientedeshabilitado">Siguiente</a>
+    <div>
+        <a asp-action="Index" asp-route-ordenActual="@ViewData["OrdenActual"]"
+           asp-route-numpag="@(Model.PaginaInicio - 1)" asp-route-filtroActual="@ViewData["FiltroActual"]"
+           class="btn btn-primary @anteriordeshabilitado">Anterior</a>
+
+        <!-- Bucle para mostrar números de página y resaltar la página actual -->
+        @for (var i = 1; i <= Model.PaginasTotales; i++)
+        {
+            var paginaactiva = (i == Model.PaginaInicio) ? "active" : "";
+            <a asp-action="Index" asp-route-ordenActual="@ViewData["OrdenActual"]"
+               asp-route-numpag="@i" asp-route-filtroActual="@ViewData["FiltroActual"]"
+               class="btn btn-primary @paginaactiva">Página @i</a>
+        }
+
+        <a asp-action="Index" asp-route-ordenActual="@ViewData["OrdenActual"]"
+           asp-route-numpag="@(Model.PaginaInicio + 1)" asp-route-filtroActual="@ViewData["FiltroActual"]"
+           class="btn btn-primary @siguientedeshabilitado">Siguiente</a>
+    </div>
 </div>
