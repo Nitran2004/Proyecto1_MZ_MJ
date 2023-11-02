@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Bienvenido al Hotel Paradiso";
+}
+
+<style>
+    /* Estilos personalizados para la portada */
+    .jumbotron {
+        background-color: #f8f9fa; /* Fondo gris claro */
+        color: #333; /* Texto oscuro */
+    }
+
+        .jumbotron h1 {
+            font-size: 3rem; /* Tamaño grande para el título */
+        }
+
+    .lead {
+        font-size: 1.5rem; /* Tamaño grande para el subtítulo */
+    }
+
+    .btn-primary {
+        background-color: #007bff; /* Botón azul */
+        border-color: #007bff; /* Borde del botón azul */
+        color: #fff; /* Texto blanco */
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3; /* Cambio de color al pasar el mouse */
+            border-color: #0056b3;
+        }
+
+    /* Estilos para centrar la imagen horizontalmente */
+    .center-image {
+        display: flex;
+        justify-content: center;
+    }
+</style>
+
+<div class="jumbotron text-center">
+    <h1 class="display-4">Bienvenido al Hotel Paradiso</h1>
+    <p class="lead">Tu destino de lujo para relajación y comodidad</p>
+    <hr class="my-4">
+    <p>Explora nuestras lujosas habitaciones, disfruta de servicios de primera clase y crea recuerdos inolvidables.</p>
+    <a class="btn btn-primary btn-lg" asp-controller="Habitacions" role="button">Reservar Ahora</a>
+</div>
+
+<!-- Contenedor para centrar la imagen -->
+<div class="center-image">
+    <img src="~/img/logo.png" class="img-fluid" alt="Logo del Hotel">
+</div>
