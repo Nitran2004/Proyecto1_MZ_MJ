@@ -27,7 +27,7 @@
     <thead>
         <tr>
             <th>
-                Nombre
+                NumHabitacion
             </th>
             <th>
                 Capacidad
@@ -56,7 +56,7 @@
         {
             <tr>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Nombre)
+                    @Html.DisplayFor(modelItem => item.NumHabitacion)
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Capacidad)
@@ -90,7 +90,7 @@
 <!-- Controles para la paginación -->
 <div>
     <div style="display: inline-block; margin-right: 20px;">
-        <a asp-action="Index" asp-route-ordenActual="NombreAscendente">Ordenar por Nombre</a>
+        <a asp-action="Index" asp-route-ordenActual="NombreAscendente">Ordenar por NumHabitacion</a>
     </div>
     <div style="display: inline-block; margin-right: 20px;">
         <a asp-action="Index" asp-route-ordenActual="PrecioAscendente">Ordenar por Precio</a>

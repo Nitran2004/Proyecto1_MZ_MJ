@@ -9,11 +9,9 @@ namespace Proyecto1_MZ_MJ.Models
     {
         public int HabitacionId { get; set; }
 
-        [Required(ErrorMessage = "El campo Nombre es obligatorio.")]
-        public string? Nombre { get; set; }
-
-        //[Required(ErrorMessage = "El campo Nombre es obligatorio.")]
-        //public string? Apellido { get; set; }
+        [Required(ErrorMessage = "El campo NumHabitacion es obligatorio.")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El campo NumHabitacion debe ser un valor positivo.")]
+        public double NumHabitacion { get; set; }
 
         [Required(ErrorMessage = "El campo Capacidad es obligatorio.")]
         public int Capacidad { get; set; }
