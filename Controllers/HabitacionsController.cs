@@ -46,12 +46,11 @@ namespace Proyecto1_MZ_MJ.Controllers
             ViewData["FiltroPrecio"] = ordenActual == "PrecioAscendente" ? "PrecioDescendente" : "PrecioAscendente";
             ViewData["FiltroCapacidad"] = ordenActual == "CapacidadAscendente" ? "CapacidadDescendente" : "CapacidadAscendente";
 
-            if (!String.IsNullOrEmpty(buscar))
+            if (!string.IsNullOrEmpty(buscar))
             {
-                string numHabitacionStr = buscar.ToLower(); // Convierte a minúsculas si es necesario
-                habitacions = habitacions.Where(s => s.NumHabitacion != null && s.NumHabitacion.ToString().Contains(numHabitacionStr));
+                int numHabitacion = int.Parse(buscar);
+                habitacions = habitacions.Where(s => s.NumHabitacion == numHabitacion);
             }
-
 
             switch (ordenActual)
             {
@@ -84,8 +83,9 @@ namespace Proyecto1_MZ_MJ.Controllers
 
 
 
-// GET: Habitacions/Create
-public IActionResult Create()
+
+        // GET: Habitacions/Create
+        public IActionResult Create()
         {
             return View();
         }

@@ -14,13 +14,14 @@
 </p>
 
 <!-- Formulario para buscar habitaciones  -->
-<form asp-controller="Habitacions" asp-action="Index">
+<form asp-controller="Habitacions" asp-action="Index" method="get">
     <p>
-        Buscar:<input type="text" name="buscar" value="@ViewData["FiltroActual"]" class="form-text" />
+        Buscar: <input type="text" name="buscar" value="@ViewData["FiltroActual"]" class="form-text" />
         <input type="submit" value="Buscar" class="btn btn-sm btn-dark" />
         <a asp-action="Index" class="btn btn-outline-info">Lista completa</a>
     </p>
 </form>
+
 
 <!-- Tabla para mostrar las habitaciones -->
 <table class="table">
