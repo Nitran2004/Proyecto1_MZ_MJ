@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Proyecto1_MZ_MJ.styles.css" asp-append-version="true" />
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <header>
@@ -28,16 +31,31 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Habitacions" asp-action="Index">Habitacion</a>
                         </li>
-
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Comentarios" asp-action="Index">Comentarios</a>
                         </li>
-
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Pagoes" asp-action="Index">Pago</a>
                         </li>
-
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Pedidos" asp-action="Resumen">Pedidos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Productos" asp-action="Index">Productos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Productos" asp-action="Menu">Menu</a>
+                        </li>
                     </ul>
+
+                    <!-- Icono de carrito con contador -->
+                    <div class="ms-auto">
+                        <a id="carrito-icono" class="btn btn-outline-dark" href="#" onclick="mostrarCarrito(); return false;">
+                            <i class="fas fa-shopping-cart me-1"></i>
+                            Carrito
+                            <span id="carrito-contador" class="badge bg-dark text-white ms-1 rounded-pill">0</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -48,6 +66,48 @@
         </main>
     </div>
 
+    <!-- Modal para visualizar el carrito -->
+    <div id="carrito-modal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tu Carrito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carrito-items">
+                            <!-- Los items del carrito se cargarán aquí dinámicamente -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">Total:</td>
+                                <td id="carrito-total" class="text-end fw-bold">$0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Seguir Comprando</button>
+                    <form asp-controller="Pedidos" asp-action="CrearDesdeCarrito" method="post">
+                        <input type="hidden" id="pedido-json" name="pedidoJson" value="" />
+                        <button type="submit" class="btn btn-success">Procesar Pedido</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2023 - Proyecto1_MZ_MJ - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
@@ -56,6 +116,93 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Script para el carrito -->
+    <script>
+        // Actualizar contador del carrito cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function () {
+            actualizarContadorCarrito();
+        });
+
+        // Función para actualizar el contador del carrito
+        function actualizarContadorCarrito() {
+            const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            const cantidad = carrito.reduce((total, item) => total + item.cantidad, 0);
+            document.getElementById('carrito-contador').textContent = cantidad;
+        }
+
+        // Función para mostrar el carrito en el modal
+        function mostrarCarrito() {
+            const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+            const carritoItems = document.getElementById('carrito-items');
+            carritoItems.innerHTML = '';
+
+            if (carrito.length === 0) {
+                carritoItems.innerHTML = '<tr><td colspan="5" class="text-center">Tu carrito está vacío</td></tr>';
+                document.getElementById('carrito-total').textContent = '$0.00';
+            } else {
+                let total = 0;
+
+                carrito.forEach((item, index) => {
+                    const subtotal = item.precio * item.cantidad;
+                    total += subtotal;
+
+                    carritoItems.innerHTML += `
+                                <tr data-index="${index}">
+                                    <td>${item.nombre}</td>
+                                    <td class="text-end">$${item.precio.toFixed(2)}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-secondary decrease-qty">-</button>
+                                        <span class="mx-2">${item.cantidad}</span>
+                                        <button class="btn btn-sm btn-outline-secondary increase-qty">+</button>
+                                    </td>
+                                    <td class="text-end">$${subtotal.toFixed(2)}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger remove-item">Eliminar</button>
+                                    </td>
+                                </tr>
+                            `;
+                });
+
+                document.getElementById('carrito-total').textContent = `$${total.toFixed(2)}`;
+
+                // Preparar datos para el formulario
+                document.getElementById('pedido-json').value = JSON.stringify(carrito);
+            }
+
+            // Mostrar el modal usando Bootstrap
+            var myModal = new bootstrap.Modal(document.getElementById('carrito-modal'));
+            myModal.show();
+
+            // Configurar eventos para los botones de cantidad y eliminar
+            configurarEventosCarrito();
+        }
+
+        // Configurar eventos para los botones del carrito
+        function configurarEventosCarrito() {
+            // Botones de incrementar/decrementar cantidad
+            document.querySelectorAll('.decrease-qty, .increase-qty, .remove-item').forEach(button => {
+                button.addEventListener('click', function () {
+                    const row = this.closest('tr');
+                    const index = parseInt(row.getAttribute('data-index'));
+                    const carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+                    if (this.classList.contains('decrease-qty') && carrito[index].cantidad > 1) {
+                        carrito[index].cantidad--;
+                    } else if (this.classList.contains('increase-qty')) {
+                        carrito[index].cantidad++;
+                    } else if (this.classList.contains('remove-item')) {
+                        carrito.splice(index, 1);
+                    }
+
+                    localStorage.setItem('carrito', JSON.stringify(carrito));
+                    mostrarCarrito(); // Actualizar vista del carrito
+                    actualizarContadorCarrito(); // Actualizar contador
+                });
+            });
+        }
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -111,6 +111,100 @@ namespace Proyecto1_MZ_MJ.Migrations
                     b.ToTable("Pago");
                 });
 
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Pedido", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("UsuarioId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Pedidos");
+                });
+
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoProducto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<int?>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.HasIndex("ProductoId");
+
+                    b.ToTable("PedidoProductos");
+                });
+
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Producto", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("Alergenos")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Categoria")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Descripcion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("Imagen")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("InfoNutricional")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PedidoId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.ToTable("Productos");
+                });
+
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Comentario", b =>
                 {
                     b.HasOne("Proyecto1_MZ_MJ.Models.Habitacion", "Habitacion")
@@ -133,9 +227,47 @@ namespace Proyecto1_MZ_MJ.Migrations
                     b.Navigation("Habitacion");
                 });
 
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoProducto", b =>
+                {
+                    b.HasOne("Proyecto1_MZ_MJ.Models.Pedido", "Pedido")
+                        .WithMany("PedidoProductos")
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Proyecto1_MZ_MJ.Models.Producto", "Producto")
+                        .WithMany("PedidoProductos")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Pedido");
+
+                    b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Producto", b =>
+                {
+                    b.HasOne("Proyecto1_MZ_MJ.Models.Pedido", "Pedido")
+                        .WithMany()
+                        .HasForeignKey("PedidoId");
+
+                    b.Navigation("Pedido");
+                });
+
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Habitacion", b =>
                 {
                     b.Navigation("Comentarios");
+                });
+
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Pedido", b =>
+                {
+                    b.Navigation("PedidoProductos");
+                });
+
+            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Producto", b =>
+                {
+                    b.Navigation("PedidoProductos");
                 });
 #pragma warning restore 612, 618
         }

@@ -19,5 +19,9 @@ namespace Proyecto1_MZ_MJ.Data
         public DbSet<Proyecto1_MZ_MJ.Models.Comentario>? Comentario { get; set; }
 
         public DbSet<Proyecto1_MZ_MJ.Models.Pago>? Pago { get; set; }
+
+        public DbSet<Producto> Productos { get; set; }
+        public DbSet<Pedido> Pedidos { get; set; }
+        public DbSet<PedidoProducto> PedidoProductos { get; set; }
     }
 }
