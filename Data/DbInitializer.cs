@@ -816,8 +816,12 @@ namespace Proyecto1_MZ_MJ.Data
                 },
             };
 
+
+
             context.Productos.AddRange(productos);
             context.SaveChanges();
+
+
         }
     }
 }
