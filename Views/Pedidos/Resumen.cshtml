@@ -27,5 +27,7 @@
         }
     </tbody>
 </table>
+<p><strong>Estado del pedido:</strong> @Model.Estado</p>
+
 
 <p><strong>Total del pedido:</strong> $@Model.PedidoProductos.Sum(p => p.Producto.Precio * p.Cantidad)</p>

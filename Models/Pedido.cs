@@ -11,8 +11,10 @@
 
         public List<PedidoDetalle> Detalles { get; set; }
 
+        public string Estado { get; set; } = "Preparándose"; // ← NUEVO: valor inicial por defecto
+
 
     }
 
-    
+
 }

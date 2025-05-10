@@ -203,6 +203,20 @@ public class PedidosController : Controller
     }
 
 
+    [HttpPost]
+    public async Task<IActionResult> ActualizarEstado(int id, string estado)
+    {
+        var pedido = await _context.Pedidos.FindAsync(id);
+        if (pedido == null)
+        {
+            return NotFound();
+        }
+
+        pedido.Estado = estado;
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("ResumenAdmin", new { id = pedido.Id });
+    }
 
 
 

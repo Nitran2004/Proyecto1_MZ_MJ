@@ -1,12 +1,24 @@
 ﻿@model List<Proyecto1_MZ_MJ.Models.Pedido>
 
-<h2>Resumen de Todos los Pedidos</h2>
+<h2>Resumen de Pedidos Para Admin</h2>
 
 @foreach (var pedido in Model)
 {
-    <div style="margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-        <p><strong>Pedido ID:</strong> @pedido.Id</p>
-        <p><strong>Fecha:</strong> @pedido.Fecha.ToString("dd/MM/yyyy HH:mm")</p>
+    <div style="border:1px solid #ccc; padding:10px; margin-bottom:20px;">
+        <h3>Pedido #@pedido.Id</h3>
+        <p>Fecha del pedido: @pedido.Fecha.ToString("dd/MM/yyyy HH:mm")</p>
+
+        <form asp-action="ActualizarEstado" asp-controller="Pedidos" method="post">
+            <input type="hidden" name="id" value="@pedido.Id" />
+            <label for="estado">Estado del pedido:</label>
+            <select name="estado" id="estado">
+                <option value="Preparándose" selected="@("Preparándose" == pedido.Estado)">Preparándose</option>
+                <option value="Listo para entregar" selected="@("Listo para entregar" == pedido.Estado)">Listo para entregar</option>
+                <option value="Entregado" selected="@("Entregado" == pedido.Estado)">Entregado</option>
+            </select>
+            <button type="submit">Actualizar Estado</button>
+        </form>
+
         <table>
             <thead>
                 <tr>
@@ -21,15 +33,17 @@
                 @foreach (var item in pedido.PedidoProductos)
                 {
                     <tr>
-                        <td>@item.Producto?.Nombre</td>
-                        <td>@item.Producto?.Categoria</td>
+                        <td>@item.Producto.Nombre</td>
+                        <td>@item.Producto.Categoria</td>
                         <td>@item.Cantidad</td>
-                        <td>$@item.Producto?.Precio</td>
-                        <td>$@(item.Cantidad * item.Producto?.Precio ?? 0)</td>
+                        <td>$@item.Producto.Precio</td>
+                        <td>$@(item.Producto.Precio * item.Cantidad)</td>
                     </tr>
                 }
             </tbody>
         </table>
-        <p><strong>Total del Pedido:</strong> $@pedido.Total</p>
+
+        <p><strong>Total del pedido:</strong> $@pedido.Total</p>
     </div>
 }
+
