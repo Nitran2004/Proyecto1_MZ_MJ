@@ -23,5 +23,10 @@ namespace Proyecto1_MZ_MJ.Data
         public DbSet<Producto> Productos { get; set; }
         public DbSet<Pedido> Pedidos { get; set; }
         public DbSet<PedidoProducto> PedidoProductos { get; set; }
+
+        public DbSet<Sucursal> Sucursales { get; set; }
+
+        public DbSet<CollectionPoint> CollectionPoints { get; set; }
+
     }
 }

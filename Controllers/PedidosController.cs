@@ -2,8 +2,9 @@
 using Proyecto1_MZ_MJ.Data;
 using Proyecto1_MZ_MJ.Models;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore; // ← necesario para Include y ToListAsync
-
+using Microsoft.EntityFrameworkCore;
+using Proyecto1_MZ_MJ.Models.DTOs;
+using Microsoft.AspNetCore.Http;
 
 public class PedidosController : Controller
 {
@@ -20,9 +21,42 @@ public class PedidosController : Controller
         var producto = await _context.Productos.FindAsync(productoId);
         if (producto == null) return NotFound();
 
+        // Obtenemos la sucursal seleccionada de la sesión
+        var sucursalId = HttpContext.Session.GetInt32("SucursalSeleccionada");
+
+        // Si no hay sucursal seleccionada, intentamos obtener la primera sucursal
+        if (sucursalId == null)
+        {
+            var primeraSucursal = await _context.Sucursales.FirstOrDefaultAsync();
+            if (primeraSucursal == null)
+            {
+                // Crear una sucursal si no existe ninguna (opcional)
+                var nuevaSucursal = new Sucursal
+                {
+                    Nombre = "Verace Pizza",
+                    Direccion = "Av. de los Shyris N35-52",
+                    Latitud = -0.240653,
+                    Longitud = -78.487834
+                };
+                _context.Sucursales.Add(nuevaSucursal);
+                await _context.SaveChangesAsync();
+
+                sucursalId = nuevaSucursal.Id;
+            }
+            else
+            {
+                sucursalId = primeraSucursal.Id;
+            }
+
+            // Guardamos la sucursal en la sesión
+            HttpContext.Session.SetInt32("SucursalSeleccionada", sucursalId.Value);
+        }
+
         var pedido = new Pedido
         {
             UsuarioId = User.Identity.IsAuthenticated ? User.FindFirstValue(ClaimTypes.NameIdentifier) : null,
+            Fecha = DateTime.Now,
+            SucursalId = sucursalId.Value, // Asignamos la sucursal al pedido
             PedidoProductos = new List<PedidoProducto>
             {
                 new PedidoProducto
@@ -45,6 +79,7 @@ public class PedidosController : Controller
         var pedido = await _context.Pedidos
             .Include(p => p.PedidoProductos!)
                 .ThenInclude(pp => pp.Producto)
+            .Include(p => p.Sucursal) // Incluir la sucursal relacionada
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (pedido == null) return NotFound();
@@ -54,7 +89,9 @@ public class PedidosController : Controller
 
     public async Task<IActionResult> Admin()
     {
-        var pedidos = await _context.Pedidos.ToListAsync();
+        var pedidos = await _context.Pedidos
+            .Include(p => p.Sucursal) // Incluir la sucursal relacionada
+            .ToListAsync();
         return View(pedidos);
     }
 
@@ -86,9 +123,29 @@ public class PedidosController : Controller
 
         if (!productosElegidos.Any()) return RedirectToAction("SeleccionarProductos");
 
+        // Obtenemos la sucursal seleccionada de la sesión
+        var sucursalId = HttpContext.Session.GetInt32("SucursalSeleccionada");
+
+        // Si no hay sucursal seleccionada, intentamos obtener la primera sucursal
+        if (sucursalId == null)
+        {
+            var primeraSucursal = await _context.Sucursales.FirstOrDefaultAsync();
+            if (primeraSucursal != null)
+            {
+                sucursalId = primeraSucursal.Id;
+                HttpContext.Session.SetInt32("SucursalSeleccionada", sucursalId.Value);
+            }
+            else
+            {
+                return RedirectToAction("SeleccionarSucursal", new { returnUrl = Request.Path });
+            }
+        }
+
         var pedido = new Pedido
         {
             UsuarioId = User.Identity.IsAuthenticated ? User.FindFirstValue(ClaimTypes.NameIdentifier) : null,
+            Fecha = DateTime.Now,
+            SucursalId = sucursalId.Value,
             PedidoProductos = productosElegidos.Select(p => new PedidoProducto
             {
                 ProductoId = p.ProductoId,
@@ -109,10 +166,29 @@ public class PedidosController : Controller
         if (detalles == null || !detalles.Any())
             return BadRequest("Carrito vacío");
 
+        // Obtenemos la sucursal seleccionada de la sesión
+        var sucursalId = HttpContext.Session.GetInt32("SucursalSeleccionada");
+
+        // Si no hay sucursal seleccionada, intentamos obtener la primera sucursal
+        if (sucursalId == null)
+        {
+            var primeraSucursal = await _context.Sucursales.FirstOrDefaultAsync();
+            if (primeraSucursal != null)
+            {
+                sucursalId = primeraSucursal.Id;
+                HttpContext.Session.SetInt32("SucursalSeleccionada", sucursalId.Value);
+            }
+            else
+            {
+                return BadRequest("No se ha seleccionado una sucursal y no hay sucursales disponibles.");
+            }
+        }
+
         var pedido = new Pedido
         {
             Fecha = DateTime.Now,
             Total = detalles.Sum(d => d.Cantidad * d.PrecioUnitario),
+            SucursalId = sucursalId.Value,
             Detalles = detalles
         };
 
@@ -133,9 +209,26 @@ public class PedidosController : Controller
             return BadRequest("Datos inválidos");
         }
 
+        // Obtener la primera sucursal directamente de la base de datos
+        var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+        if (sucursal == null)
+        {
+            // Crear una sucursal si no existe ninguna
+            sucursal = new Sucursal
+            {
+                Nombre = "Verace Pizza",
+                Direccion = "Av. de los Shyris N35-52",
+                Latitud = -0.180653,
+                Longitud = -78.487834
+            };
+            _context.Sucursales.Add(sucursal);
+            await _context.SaveChangesAsync();
+        }
+
         var pedido = new Pedido
         {
             Fecha = DateTime.Now,
+            SucursalId = sucursal.Id,
             PedidoProductos = new List<PedidoProducto>()
         };
 
@@ -158,7 +251,7 @@ public class PedidosController : Controller
             }
         }
 
-        pedido.Total = total; // ✅ Ahora sí se asigna el total correcto
+        pedido.Total = total;
 
         _context.Pedidos.Add(pedido);
         await _context.SaveChangesAsync();
@@ -178,6 +271,7 @@ public class PedidosController : Controller
         var pedidos = await _context.Pedidos
             .Include(p => p.PedidoProductos!)
                 .ThenInclude(pp => pp.Producto)
+            .Include(p => p.Sucursal)
             .OrderByDescending(p => p.Fecha)
             .ToListAsync();
 
@@ -191,17 +285,17 @@ public class PedidosController : Controller
             var pedido = await _context.Pedidos
                 .Include(p => p.PedidoProductos)
                     .ThenInclude(pp => pp.Producto)
+                .Include(p => p.Sucursal)
                 .FirstOrDefaultAsync(p => p.Id == pedidoId);
 
             if (pedido != null)
             {
-                return View("Resumen", pedido); // o "ResumenAdmin" si es esa la vista
+                return View("Resumen", pedido);
             }
         }
 
-        return RedirectToAction("Index", "Home"); // O una vista de error
+        return RedirectToAction("Index", "Home");
     }
-
 
     [HttpPost]
     public async Task<IActionResult> ActualizarEstado(int id, string estado)
@@ -215,9 +309,204 @@ public class PedidosController : Controller
         pedido.Estado = estado;
         await _context.SaveChangesAsync();
 
-        return RedirectToAction("ResumenAdmin", new { id = pedido.Id });
+        return RedirectToAction("ResumenAdmin");
     }
 
+    public async Task<IActionResult> SeleccionarSucursal(double lat, double lng, string returnUrl = null)
+    {
+        var sucursales = await _context.Sucursales.ToListAsync();
 
+        if (!sucursales.Any())
+        {
+            // Si no hay sucursales, crear una por defecto
+            await CrearSucursalesPrueba();
+            sucursales = await _context.Sucursales.ToListAsync();
+        }
 
+        ViewBag.UserLat = lat;
+        ViewBag.UserLng = lng;
+        ViewBag.ReturnUrl = returnUrl;
+
+        return View(sucursales);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ConfirmarSucursal(int sucursalId, double lat, double lng, string returnUrl = null)
+    {
+        var sucursal = await _context.Sucursales.FindAsync(sucursalId);
+        if (sucursal == null) return NotFound();
+
+        HttpContext.Session.SetInt32("SucursalSeleccionada", sucursalId);
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return View("ConfirmarSucursal", sucursal);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ResumenPedido()
+    {
+        int? sucursalId = HttpContext.Session.GetInt32("SucursalSeleccionada");
+        if (sucursalId == null) return RedirectToAction("SeleccionarSucursal");
+
+        var sucursal = await _context.Sucursales.FindAsync(sucursalId);
+        ViewBag.Sucursal = sucursal;
+
+        var pedido = await _context.Pedidos
+            .Include(p => p.PedidoProductos)
+            .ThenInclude(pp => pp.Producto)
+            .Include(p => p.Sucursal)
+            .OrderByDescending(p => p.Id)
+            .FirstOrDefaultAsync();
+
+        return View(pedido);
+    }
+
+    public async Task<IActionResult> SucursalMasCercana(double lat, double lng)
+    {
+        var sucursales = await _context.Sucursales.ToListAsync();
+
+        if (!sucursales.Any())
+        {
+            // Si no hay sucursales, crear una por defecto
+            await CrearSucursalesPrueba();
+            sucursales = await _context.Sucursales.ToListAsync();
+        }
+
+        Sucursal? sucursalMasCercana = null;
+        double menorDistancia = double.MaxValue;
+
+        foreach (var sucursal in sucursales)
+        {
+            double distancia = CalcularDistancia(lat, lng, sucursal.Latitud, sucursal.Longitud);
+            if (distancia < menorDistancia)
+            {
+                menorDistancia = distancia;
+                sucursalMasCercana = sucursal;
+            }
+        }
+
+        if (sucursalMasCercana == null)
+        {
+            return NotFound("No se encontraron sucursales.");
+        }
+
+        HttpContext.Session.SetInt32("SucursalSeleccionada", sucursalMasCercana.Id);
+
+        return View("ConfirmarSucursal", sucursalMasCercana);
+    }
+
+    private double CalcularDistancia(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double R = 6371; // Radio de la Tierra en kilómetros
+
+        double dLat = GradosARadianes(lat2 - lat1);
+        double dLon = GradosARadianes(lon2 - lon1);
+
+        double a =
+            Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+            Math.Cos(GradosARadianes(lat1)) * Math.Cos(GradosARadianes(lat2)) *
+            Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+        double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+        return R * c;
+    }
+
+    private double GradosARadianes(double grados)
+    {
+        return grados * (Math.PI / 180);
+    }
+
+    public async Task<IActionResult> CrearSucursalesPrueba()
+    {
+        if (!await _context.Sucursales.AnyAsync())
+        {
+            _context.Sucursales.AddRange(
+                new Sucursal { Nombre = "Verace Pizza", Direccion = "Av. de los Shyris N35-52", Latitud = -0.180653, Longitud = -78.467834 }
+            );
+            await _context.SaveChangesAsync();
+        }
+
+        return RedirectToAction("Index", "Home");
+    }
+
+    [HttpPost("crear-con-ubicacion")]
+    [ValidateAntiForgeryToken] // Si estás usando protección CSRF
+    public async Task<IActionResult> CrearPedidoConUbicacion([FromBody] PedidoConUbicacionDTO datos)
+    {
+        try
+        {
+            // Primero verificamos si hay sucursales en la base de datos
+            var existenSucursales = await _context.Sucursales.AnyAsync();
+            if (!existenSucursales)
+            {
+                // Si no hay sucursales, creamos una predeterminada
+                _context.Sucursales.Add(new Sucursal
+                {
+                    Nombre = "Verace Pizza",
+                    Direccion = "Av. de los Shyris N35-52",
+                    Latitud = -0.180653,
+                    Longitud = -78.467834
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            // Buscamos la sucursal más cercana
+            var sucursal = await _context.Sucursales
+                .OrderBy(s => Math.Sqrt(Math.Pow(s.Latitud - datos.Latitud, 2) + Math.Pow(s.Longitud - datos.Longitud, 2)))
+                .FirstOrDefaultAsync();
+
+            if (sucursal == null)
+                return BadRequest(new { error = "No se pudo determinar una sucursal cercana" });
+
+            // Verificamos que los productos existan
+            if (datos.ProductosIdsSeleccionados == null || !datos.ProductosIdsSeleccionados.Any())
+                return BadRequest(new { error = "No se seleccionaron productos" });
+
+            var productos = await _context.Productos
+                .Where(p => datos.ProductosIdsSeleccionados.Contains(p.Id))
+                .ToListAsync();
+
+            if (!productos.Any())
+                return BadRequest(new { error = "Ninguno de los productos seleccionados existe" });
+
+            // Creamos el pedido
+            var pedido = new Pedido
+            {
+                UsuarioId = User.Identity.IsAuthenticated ? User.FindFirstValue(ClaimTypes.NameIdentifier) : null,
+                Fecha = DateTime.Now,
+                Total = 0,
+                SucursalId = sucursal.Id,
+                PedidoProductos = new List<PedidoProducto>()
+            };
+
+            // Agregamos los productos al pedido
+            foreach (var producto in productos)
+            {
+                pedido.Total += producto.Precio;
+                pedido.PedidoProductos.Add(new PedidoProducto
+                {
+                    ProductoId = producto.Id,
+                    Cantidad = 1,
+                    Precio = producto.Precio
+                });
+            }
+
+            // Guardamos en sesión la sucursal seleccionada
+            HttpContext.Session.SetInt32("SucursalSeleccionada", sucursal.Id);
+
+            _context.Pedidos.Add(pedido);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Pedido creado exitosamente", id = pedido.Id });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = $"Error al guardar el pedido: {ex.InnerException?.Message ?? ex.Message}" });
+        }
+    }
 }

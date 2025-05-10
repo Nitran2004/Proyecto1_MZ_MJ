@@ -13,6 +13,12 @@
 
         public string Estado { get; set; } = "Preparándose"; // ← NUEVO: valor inicial por defecto
 
+        // Relación con productos
+        public List<Producto> Productos { get; set; } = new List<Producto>();
+
+        // Relación con sucursal
+        public int SucursalId { get; set; }
+        public Sucursal Sucursal { get; set; }
 
     }
 

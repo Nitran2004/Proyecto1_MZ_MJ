@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proyecto1_MZ_MJ.Data;
 
@@ -11,9 +12,10 @@ using Proyecto1_MZ_MJ.Data;
 namespace Proyecto1_MZ_MJ.Migrations
 {
     [DbContext(typeof(Proyecto1_MZ_MJContext))]
-    partial class Proyecto1_MZ_MJContextModelSnapshot : ModelSnapshot
+    [Migration("20250510061534_AgregarSucursales")]
+    partial class AgregarSucursales
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,33 +23,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
-
-            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.CollectionPoint", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("Latitude")
-                        .HasColumnType("float");
-
-                    b.Property<double>("Longitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CollectionPoints");
-                });
 
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Comentario", b =>
                 {
@@ -153,9 +128,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("SucursalId")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
@@ -163,8 +135,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SucursalId");
 
                     b.ToTable("Pedidos");
                 });
@@ -284,10 +254,6 @@ namespace Proyecto1_MZ_MJ.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<string>("Direccion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<double>("Latitud")
                         .HasColumnType("float");
 
@@ -323,17 +289,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                         .IsRequired();
 
                     b.Navigation("Habitacion");
-                });
-
-            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Pedido", b =>
-                {
-                    b.HasOne("Proyecto1_MZ_MJ.Models.Sucursal", "Sucursal")
-                        .WithMany()
-                        .HasForeignKey("SucursalId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Sucursal");
                 });
 
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoDetalle", b =>
@@ -377,7 +332,7 @@ namespace Proyecto1_MZ_MJ.Migrations
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Producto", b =>
                 {
                     b.HasOne("Proyecto1_MZ_MJ.Models.Pedido", "Pedido")
-                        .WithMany("Productos")
+                        .WithMany()
                         .HasForeignKey("PedidoId");
 
                     b.Navigation("Pedido");
@@ -393,8 +348,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                     b.Navigation("Detalles");
 
                     b.Navigation("PedidoProductos");
-
-                    b.Navigation("Productos");
                 });
 
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Producto", b =>

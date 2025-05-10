@@ -11,6 +11,11 @@ namespace Proyecto1_MZ_MJ.Data
                 return; // DB ya tiene datos
             }
 
+
+
+
+
+
             var productos = new List<Producto>
             {
                 // PIZZAS
@@ -817,11 +822,31 @@ namespace Proyecto1_MZ_MJ.Data
             };
 
 
+            if (!context.CollectionPoints.Any())
+            {
+                var points = new List<CollectionPoint>
+                {
+            new CollectionPoint
+            {
+                    Name = "Verace Pizza",
+                Address  = "Av. de los Shyris N35-52",
+                Latitude = -0.240653,
+                Longitude = -78.487834
+            }
+        };
+
+                context.CollectionPoints.AddRange(points);
+                context.SaveChanges();
+            }
+
 
             context.Productos.AddRange(productos);
             context.SaveChanges();
 
+        }
+
+
 
         }
     }
-}
+
