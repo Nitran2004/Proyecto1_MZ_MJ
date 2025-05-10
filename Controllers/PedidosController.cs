@@ -166,6 +166,17 @@ public class PedidosController : Controller
         return RedirectToAction("Resumen", new { id = pedido.Id });
     }
 
+    public async Task<IActionResult> ResumenAdmin()
+    {
+        var pedidos = await _context.Pedidos
+            .Include(p => p.PedidoProductos!)
+                .ThenInclude(pp => pp.Producto)
+            .OrderByDescending(p => p.Fecha)
+            .ToListAsync();
+
+        return View(pedidos);
+    }
+
 
 
 
