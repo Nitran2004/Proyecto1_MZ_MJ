@@ -98,6 +98,12 @@ namespace Proyecto1_MZ_MJ.Controllers
             return View(productos);
         }
 
+        public async Task<IActionResult> Recoleccion()
+        {
+            var productos = await _context.Productos.ToListAsync();
+            return View(productos);
+        }
+
         //public async Task<IActionResult> Detalle(int id)
         //{
         //    var producto = await _context.Productos.FindAsync(id);

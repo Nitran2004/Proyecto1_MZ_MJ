@@ -30,21 +30,4 @@
         Agregar Seleccionados al Pedido
     </button>
 
-    <script>
-        function obtenerUbicacionYEnviar() {
-            // Obtener los productos seleccionados del carrito
-            const productosSeleccionados = obtenerProductosSeleccionados(); // Esta función debe existir y retornar los productos
-
-            // Guardar los productos seleccionados en localStorage
-            localStorage.setItem('cart', JSON.stringify(productosSeleccionados));
-
-            // Mensaje opcional para confirmar que se agregaron al carrito
-            alert('Productos agregados al carrito');
-
-            // Redireccionar a la página de selección de punto de recolección
-            window.location.href = '/Recoleccion/Seleccionar';
-        }
-
-    </script>
-
 </form>

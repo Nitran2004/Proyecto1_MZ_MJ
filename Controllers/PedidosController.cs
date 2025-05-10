@@ -263,7 +263,8 @@ public class PedidosController : Controller
         };
         Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
 
-        return RedirectToAction("Resumen", new { id = pedido.Id });
+        return RedirectToAction("Seleccionar", "Recoleccion");
+        //return RedirectToAction("Resumen", new { id = pedido.Id });
     }
 
     public async Task<IActionResult> ResumenAdmin()
