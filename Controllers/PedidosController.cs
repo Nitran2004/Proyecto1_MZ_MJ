@@ -163,6 +163,13 @@ public class PedidosController : Controller
         _context.Pedidos.Add(pedido);
         await _context.SaveChangesAsync();
 
+        // Guardar ID del pedido en una cookie por 30 minutos
+        CookieOptions options = new CookieOptions
+        {
+            Expires = DateTimeOffset.Now.AddMinutes(30)
+        };
+        Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
+
         return RedirectToAction("Resumen", new { id = pedido.Id });
     }
 
@@ -177,6 +184,23 @@ public class PedidosController : Controller
         return View(pedidos);
     }
 
+    public async Task<IActionResult> VerPedidoTemporal()
+    {
+        if (Request.Cookies.TryGetValue("PedidoTemporalId", out string pedidoIdStr) && int.TryParse(pedidoIdStr, out int pedidoId))
+        {
+            var pedido = await _context.Pedidos
+                .Include(p => p.PedidoProductos)
+                    .ThenInclude(pp => pp.Producto)
+                .FirstOrDefaultAsync(p => p.Id == pedidoId);
+
+            if (pedido != null)
+            {
+                return View("Resumen", pedido); // o "ResumenAdmin" si es esa la vista
+            }
+        }
+
+        return RedirectToAction("Index", "Home"); // O una vista de error
+    }
 
 
 
