@@ -4,7 +4,14 @@
     {
         public int Id { get; set; }
         public string? UsuarioId { get; set; } // Puede ser null si no se ha registrado
-        public ICollection<PedidoProducto>? PedidoProductos { get; set; }
+        public ICollection<PedidoProducto> PedidoProductos { get; set; }
+
+        public DateTime Fecha { get; set; }
+        public decimal Total { get; set; }
+
+        public List<PedidoDetalle> Detalles { get; set; }
+
+
     }
 
     

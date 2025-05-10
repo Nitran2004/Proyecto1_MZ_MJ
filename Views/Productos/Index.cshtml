@@ -1,18 +1,25 @@
-﻿@model IEnumerable<Producto>
+﻿@model IEnumerable<Proyecto1_MZ_MJ.Models.Producto>
 
-<h2>Menú de Productos</h2>
-@foreach (var producto in Model)
-{
-    <div>
-        <h4>@producto.Nombre</h4>
-        <p>@producto.Categoria</p>
-        <p>Precio: $@producto.Precio</p>
-        <form asp-controller="Pedidos" asp-action="Crear" method="post">
-            <input type="hidden" name="productoId" value="@producto.Id" />
-            <label>Cantidad:</label>
-            <input type="number" name="cantidad" value="1" min="1" />
-            <button type="submit">Agregar al Pedido</button>
-        </form>
-    </div>
-    <hr />
+@{
+    ViewData["Title"] = "Menú de Productos";
 }
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-controller="Pedidos" asp-action="AgregarSeleccionados" method="post">
+    <div>
+        @for (int i = 0; i < Model.Count(); i++)
+        {
+            var producto = Model.ElementAt(i);
+            <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+                <input type="checkbox" name="seleccionados[@i].Seleccionado" value="true" />
+                <input type="hidden" name="seleccionados[@i].ProductoId" value="@producto.Id" />
+                <strong>@producto.Nombre</strong> - @producto.Categoria <br />
+                Precio: $@producto.Precio <br />
+                Cantidad:
+                <input type="number" name="seleccionados[@i].Cantidad" value="1" min="1" style="width: 60px;" />
+            </div>
+        }
+    </div>
+    <button type="submit">Agregar Seleccionados al Pedido</button>
+</form>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proyecto1_MZ_MJ.Data;
 
@@ -11,9 +12,10 @@ using Proyecto1_MZ_MJ.Data;
 namespace Proyecto1_MZ_MJ.Migrations
 {
     [DbContext(typeof(Proyecto1_MZ_MJContext))]
-    partial class Proyecto1_MZ_MJContextModelSnapshot : ModelSnapshot
+    [Migration("20250509233113_iniciocambios")]
+    partial class iniciocambios
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -119,47 +121,12 @@ namespace Proyecto1_MZ_MJ.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<DateTime>("Fecha")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Total")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("UsuarioId")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Pedidos");
-                });
-
-            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoDetalle", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
-
-                    b.Property<int>("Cantidad")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PedidoId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("PrecioUnitario")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ProductoId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PedidoId");
-
-                    b.HasIndex("ProductoId");
-
-                    b.ToTable("PedidoDetalle");
                 });
 
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoProducto", b =>
@@ -262,25 +229,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                     b.Navigation("Habitacion");
                 });
 
-            modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoDetalle", b =>
-                {
-                    b.HasOne("Proyecto1_MZ_MJ.Models.Pedido", "Pedido")
-                        .WithMany("Detalles")
-                        .HasForeignKey("PedidoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Proyecto1_MZ_MJ.Models.Producto", "Producto")
-                        .WithMany()
-                        .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Pedido");
-
-                    b.Navigation("Producto");
-                });
-
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.PedidoProducto", b =>
                 {
                     b.HasOne("Proyecto1_MZ_MJ.Models.Pedido", "Pedido")
@@ -316,8 +264,6 @@ namespace Proyecto1_MZ_MJ.Migrations
 
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Pedido", b =>
                 {
-                    b.Navigation("Detalles");
-
                     b.Navigation("PedidoProductos");
                 });
 

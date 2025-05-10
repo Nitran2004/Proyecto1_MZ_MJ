@@ -2,20 +2,30 @@
 
 <h2>Resumen del Pedido</h2>
 
-@if (Model.PedidoProductos != null && Model.PedidoProductos.Any())
-{
-    foreach (var item in Model.PedidoProductos)
-    {
-        <div>
-            <strong>Nombre:</strong> @item.Producto?.Nombre  <br />
-            <strong>Cantidad:</strong> @item.Cantidad <br />
-            <strong>Precio:</strong> $@item.Precio <br />
-            <strong>Total:</strong> $@(item.Cantidad * item.Precio)
-        </div>
-        <hr />
-    }
-}
-else
-{
-    <p>No hay productos en este pedido.</p>
-}
+<p>Fecha del pedido: @Model.Fecha.ToString("dd/MM/yyyy")</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.PedidoProductos)
+        {
+            <tr>
+                <td>@item.Producto.Nombre</td>
+                <td>@item.Producto.Categoria</td>
+                <td>@item.Cantidad</td>
+                <td>$@item.Producto.Precio</td>
+                <td>$@(item.Producto.Precio * item.Cantidad)</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p><strong>Total del pedido:</strong> $@Model.PedidoProductos.Sum(p => p.Producto.Precio * p.Cantidad)</p>

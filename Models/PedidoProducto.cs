@@ -6,7 +6,7 @@
 
         // Relación con Pedido
         public int PedidoId { get; set; }
-        public Pedido? Pedido { get; set; }
+        public Pedido Pedido { get; set; }
 
         // Relación con Producto
         public int ProductoId { get; set; }
@@ -14,7 +14,7 @@
 
         // Atributos elegidos
         public int? Cantidad { get; set; }
-        public decimal? Precio { get; set; }
+        public decimal Precio { get; set; }
 
         public decimal Total { get; set; }
     }

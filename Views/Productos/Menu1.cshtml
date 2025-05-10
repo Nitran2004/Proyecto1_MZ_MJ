@@ -19,7 +19,7 @@
             <!-- Datos -->
             <h4>@producto.Nombre</h4>
             <p>@producto.Categoria</p>
-            <p>Precio: $@(producto.Precio?.ToString("F2") ?? "0.00")</p>
+            <p>Precio: $@(producto.Precio.ToString("F2") ?? "0.00")</p>
             <!-- Controles para añadir al carrito -->
             <div class="add-to-cart-controls">
                 <label>Cantidad:</label>

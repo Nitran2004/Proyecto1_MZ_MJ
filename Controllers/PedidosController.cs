@@ -57,4 +57,118 @@ public class PedidosController : Controller
         var pedidos = await _context.Pedidos.ToListAsync();
         return View(pedidos);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> SeleccionarProductos()
+    {
+        var productos = await _context.Productos.ToListAsync();
+
+        var viewModel = new PedidoViewModel
+        {
+            ProductosSeleccionados = productos.Select(p => new ProductoSeleccionado
+            {
+                ProductoId = p.Id,
+                Nombre = p.Nombre,
+                Precio = p.Precio,
+                Cantidad = 1
+            }).ToList()
+        };
+
+        return View(viewModel);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CrearPedidoMultiple(PedidoViewModel model)
+    {
+        var productosElegidos = model.ProductosSeleccionados
+            .Where(p => p.Cantidad > 0)
+            .ToList();
+
+        if (!productosElegidos.Any()) return RedirectToAction("SeleccionarProductos");
+
+        var pedido = new Pedido
+        {
+            UsuarioId = User.Identity.IsAuthenticated ? User.FindFirstValue(ClaimTypes.NameIdentifier) : null,
+            PedidoProductos = productosElegidos.Select(p => new PedidoProducto
+            {
+                ProductoId = p.ProductoId,
+                Cantidad = p.Cantidad,
+                Precio = p.Precio
+            }).ToList()
+        };
+
+        _context.Pedidos.Add(pedido);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Resumen", new { id = pedido.Id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CrearPedido([FromBody] List<PedidoDetalle> detalles)
+    {
+        if (detalles == null || !detalles.Any())
+            return BadRequest("Carrito vacío");
+
+        var pedido = new Pedido
+        {
+            Fecha = DateTime.Now,
+            Total = detalles.Sum(d => d.Cantidad * d.PrecioUnitario),
+            Detalles = detalles
+        };
+
+        _context.Pedidos.Add(pedido);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { mensaje = "Pedido creado exitosamente", pedido.Id });
+    }
+    [HttpPost]
+    public async Task<IActionResult> AgregarSeleccionados(List<ProductoSeleccionadoInput> seleccionados)
+    {
+        var seleccionadosValidos = seleccionados
+            .Where(p => p.Seleccionado && p.Cantidad > 0)
+            .ToList();
+
+        if (!seleccionadosValidos.Any())
+        {
+            return BadRequest("Datos inválidos");
+        }
+
+        var pedido = new Pedido
+        {
+            Fecha = DateTime.Now,
+            PedidoProductos = new List<PedidoProducto>()
+        };
+
+        decimal total = 0;
+
+        foreach (var item in seleccionadosValidos)
+        {
+            var producto = await _context.Productos.FindAsync(item.ProductoId);
+            if (producto != null)
+            {
+                decimal subtotal = producto.Precio * item.Cantidad;
+                total += subtotal;
+
+                pedido.PedidoProductos.Add(new PedidoProducto
+                {
+                    ProductoId = producto.Id,
+                    Cantidad = item.Cantidad,
+                    Precio = producto.Precio
+                });
+            }
+        }
+
+        pedido.Total = total; // ✅ Ahora sí se asigna el total correcto
+
+        _context.Pedidos.Add(pedido);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Resumen", new { id = pedido.Id });
+    }
+
+
+
+
+
+
 }
