@@ -510,4 +510,33 @@ public class PedidosController : Controller
             return BadRequest(new { error = $"Error al guardar el pedido: {ex.InnerException?.Message ?? ex.Message}" });
         }
     }
+
+    [HttpPost]
+    public async Task<IActionResult> GuardarComentario(int pedidoId, int calificacion, string comentario)
+    {
+        var pedido = await _context.Pedidos.FindAsync(pedidoId);
+
+        if (pedido == null)
+        {
+            return NotFound();
+        }
+
+        // Verificar que el pedido esté en estado "Entregado"
+        if (pedido.Estado != "Entregado")
+        {
+            return BadRequest("Solo se pueden comentar pedidos entregados");
+        }
+
+        // Asignar comentario y calificación
+        pedido.Comentario = comentario;
+        pedido.Calificacion = calificacion;
+        pedido.ComentarioEnviado = true;
+
+        await _context.SaveChangesAsync();
+
+        // Redireccionar al resumen del pedido
+        return RedirectToAction("Resumen", new { id = pedidoId });
+    }
+
+
 }

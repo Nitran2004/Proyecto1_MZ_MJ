@@ -20,6 +20,11 @@
         public int SucursalId { get; set; }
         public Sucursal Sucursal { get; set; }
 
+        // Nuevos campos para comentarios y calificación
+        public string? Comentario { get; set; }
+        public int? Calificacion { get; set; } // 1-5 estrellas
+        public bool ComentarioEnviado { get; set; } = false;
+
     }
 
 
