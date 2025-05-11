@@ -1,0 +1,80 @@
+﻿@model IEnumerable<Proyecto1_MZ_MJ.Models.Producto>
+
+@{
+    ViewData["Title"] = "Productos de la Categoría";
+}
+
+<h2>Productos de la Categoría</h2>
+
+<form asp-controller="Pedidos" asp-action="AgregarSeleccionados" method="post">
+    @Html.AntiForgeryToken()
+
+    <div>
+        @{
+            int index = 0;
+        }
+        @foreach (var producto in Model)
+        {
+            <div class="producto-card" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+                <input type="hidden" name="seleccionados[@index].ProductoId" value="@producto.Id" />
+                <input type="checkbox" class="producto-checkbox" data-id="@producto.Id" name="seleccionados[@index].Seleccionado" value="true" />
+
+                <strong>@producto.Nombre</strong> - @producto.Categoria <br />
+                Precio: $@producto.Precio <br />
+                Cantidad:
+                <input type="number" name="seleccionados[@index].Cantidad" value="1" min="1" style="width: 60px;" class="cantidad-input" data-id="@producto.Id" />
+            </div>
+            index++;
+        }
+    </div>
+
+    <button type="submit" class="btn btn-success">Agregar Seleccionados al Pedido</button>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const checkboxes = document.querySelectorAll(".producto-checkbox");
+        const cantidades = document.querySelectorAll(".cantidad-input");
+        let seleccionados = JSON.parse(localStorage.getItem("productosSeleccionados")) || [];
+
+        checkboxes.forEach(cb => {
+            const id = cb.getAttribute("data-id");
+            const item = seleccionados.find(p => p.id === id);
+            if (item) {
+                cb.checked = true;
+                const cantidadInput = document.querySelector(`.cantidad-input[data-id='${id}']`);
+                if (cantidadInput) cantidadInput.value = item.cantidad;
+            }
+
+            cb.addEventListener("change", () => actualizarSeleccion(id));
+        });
+
+        cantidades.forEach(input => {
+            input.addEventListener("input", () => {
+                const id = input.getAttribute("data-id");
+                actualizarSeleccion(id);
+            });
+        });
+
+        function actualizarSeleccion(id) {
+            const cb = document.querySelector(`.producto-checkbox[data-id='${id}']`);
+            const input = document.querySelector(`.cantidad-input[data-id='${id}']`);
+
+            let seleccionados = JSON.parse(localStorage.getItem("productosSeleccionados")) || [];
+
+            if (cb.checked) {
+                const cantidad = input.value;
+                const existente = seleccionados.find(p => p.id === id);
+                if (existente) {
+                    existente.cantidad = cantidad;
+                } else {
+                    seleccionados.push({ id: id, cantidad: cantidad });
+                }
+            } else {
+                seleccionados = seleccionados.filter(p => p.id !== id);
+            }
+
+            localStorage.setItem("productosSeleccionados", JSON.stringify(seleccionados));
+        }
+    });
+</script>

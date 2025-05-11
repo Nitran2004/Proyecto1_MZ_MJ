@@ -1,4 +1,5 @@
-﻿using Proyecto1_MZ_MJ.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Proyecto1_MZ_MJ.Models;
 
 namespace Proyecto1_MZ_MJ.Data
 {
@@ -822,22 +823,33 @@ namespace Proyecto1_MZ_MJ.Data
             };
 
 
-            if (!context.CollectionPoints.Any())
+            if (!context.Sucursales.Any())
             {
-                var points = new List<CollectionPoint>
+                var sucursal = new Sucursal
                 {
-            new CollectionPoint
-            {
-                    Name = "Verace Pizza",
-                Address  = "Av. de los Shyris N35-52",
-                Latitude = -0.240653,
-                Longitude = -78.487834
-            }
-        };
+                    Nombre = "Verace Pizza",
+                    Direccion = "Av. de los Shyris N35-52",
+                    Latitud = -0.180653,
+                    Longitud = -78.487834
+                };
 
-                context.CollectionPoints.AddRange(points);
+                context.Sucursales.Add(sucursal);
+                context.SaveChanges();
+
+                // Ahora puedes usar la sucursal creada para CollectionPoints si hay FK
+                var point = new CollectionPoint
+                {
+                    Name = "Verace Pizza",
+                    Address = "Av. de los Shyris N35-52",
+                    Latitude = -0.240653,
+                    Longitude = -78.487834,
+                    SucursalId = sucursal.Id // ← importante si hay FK
+                };
+
+                context.CollectionPoints.Add(point);
                 context.SaveChanges();
             }
+
 
 
             context.Productos.AddRange(productos);

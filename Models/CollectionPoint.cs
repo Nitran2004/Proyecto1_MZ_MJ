@@ -19,5 +19,10 @@ namespace Proyecto1_MZ_MJ.Models
 
         [Required]
         public double Longitude { get; set; }
+
+
+        // Relación con sucursal
+        public int SucursalId { get; set; }
+        public Sucursal Sucursal { get; set; }
     }
 }

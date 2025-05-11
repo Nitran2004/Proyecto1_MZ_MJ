@@ -1,319 +1,90 @@
 ﻿@{
-    ViewData["Title"] = "Confirmar Pedido";
+    ViewData["Title"] = "Confirmar Punto de Recolección";
 }
 
 <div class="container">
-    <div id="location-permission" class="location-permission" style="display:none;">
-        <h3>Necesitamos tu ubicación</h3>
-        <p>Para mostrarte la distancia al punto de recolección, necesitamos acceder a tu ubicación.</p>
-        <button id="allow-location">Permitir ubicación</button>
+    <h2>Confirmar Punto de Recolección</h2>
+    
+    <div id="punto-info" class="punto-info mb-4">
+        <!-- Aquí se mostrará la información del punto seleccionado -->
     </div>
-
-    <div id="info-container" style="display:none;">
-        <h3>Dirígete a:</h3>
-        <div id="info-punto" class="point-info">Cargando...</div>
-        <button id="btn-confirmar" class="confirm-button">Confirmar pedido</button>
+    
+    <div class="text-center mt-4">
+        <button id="btn-confirmar" class="btn btn-primary">Confirmar pedido</button>
     </div>
-
-    <div id="error-container" class="error-message" style="display:none;"></div>
 </div>
 
-<style>
-    .container {
-        max-width: 400px;
-        margin: 0 auto;
-        padding: 20px;
-        text-align: center;
-        font-family: Arial, sans-serif;
-    }
-
-    .location-permission {
-        background: #f9f9f9;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-        .location-permission button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s ease;
-            margin-top: 15px;
-        }
-
-            .location-permission button:hover {
-                background: #45a049;
-            }
-
-    .point-info {
-        background: #f9f9f9;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-        .point-info strong {
-            font-size: 18px;
-            color: #333;
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        .point-info em {
-            color: #666;
-            display: block;
-            margin-top: 10px;
-        }
-
-        .point-info a {
-            color: #4CAF50;
-            text-decoration: none;
-            margin-top: 10px;
-            display: inline-block;
-        }
-
-            .point-info a:hover {
-                text-decoration: underline;
-            }
-
-    .confirm-button {
-        background: #4CAF50;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: background 0.3s ease;
-    }
-
-        .confirm-button:hover {
-            background: #45a049;
-        }
-
-    .error-message {
-        color: red;
-        padding: 20px;
-    }
-</style>
-
-<script type="text/javascript">
-    // Obtener el punto seleccionado del almacenamiento local
-    const pt = JSON.parse(localStorage.getItem('puntoSeleccionado') || 'null');
-
-    // Elementos del DOM
-    const locationPermissionDiv = document.getElementById('location-permission');
-    const infoContainer = document.getElementById('info-container');
-    const errorContainer = document.getElementById('error-container');
-    const infoDiv = document.getElementById('info-punto');
-
-    // Función de Haversine mejorada para calcular distancia más precisa
-    function haversineDistance(lat1, lon1, lat2, lon2) {
-        // Radio de la Tierra en kilómetros
-        const R = 6371;
-
-        // Convertir grados a radianes
-        const toRadians = (degrees) => degrees * (Math.PI / 180);
-
-        // Diferencias de latitud y longitud
-        const dLat = toRadians(lat2 - lat1);
-        const dLon = toRadians(lon2 - lon1);
-
-        // Cálculos trigonométricos
-        const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        // Distancia en kilómetros
-        return R * c;
-    }
-
-    // Función para obtener ubicación del usuario
-    function getUserLocation() {
-        return new Promise((resolve, reject) => {
-            if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const userLocation = {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            timestamp: Date.now()
-                        };
-
-                        // Guardar ubicación en localStorage
-                        localStorage.setItem('userLocation', JSON.stringify(userLocation));
-
-                        resolve(userLocation);
-                    },
-                    (error) => {
-                        reject(error);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 5000,
-                        maximumAge: 0
-                    }
-                );
-            } else {
-                reject(new Error('Geolocalización no soportada por este navegador'));
-            }
-        });
-    }
-
-    // Función para obtener la ubicación guardada o solicitar nueva
-    function getStoredOrNewLocation() {
-        // Intentar obtener ubicación guardada
-        const storedLocation = JSON.parse(localStorage.getItem('userLocation'));
-
-        // Verificar si la ubicación guardada es reciente (menos de 30 minutos)
-        if (storedLocation &&
-            (Date.now() - storedLocation.timestamp) < 30 * 60 * 1000) {
-            return Promise.resolve({
-                latitude: storedLocation.latitude,
-                longitude: storedLocation.longitude
-            });
-        }
-
-        // Si no hay ubicación guardada o es antigua, solicitar nueva
-        return getUserLocation();
-    }
-
-    // Función para obtener la distancia al punto de recolección
-    async function getDistanceToCollectionPoint(userLocation) {
-        if (!pt) {
-            showError('No hay punto de recolección seleccionado');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Recuperar el punto seleccionado del localStorage
+        const puntoSeleccionado = JSON.parse(localStorage.getItem('puntoSeleccionado'));
+        
+        if (!puntoSeleccionado) {
+            window.location.href = '/Recoleccion/Seleccionar';
             return;
         }
-
-        try {
-            // Calcular distancia usando Haversine
-            const distance = haversineDistance(
-                userLocation.latitude,
-                userLocation.longitude,
-                pt.latitude,
-                pt.longitude
-            );
-
-            // Mostrar información
-            infoDiv.innerHTML = `
-                        <strong>${pt.name}</strong><br/>
-                        ${pt.address}<br/>
-                        <em>Coordenadas:</em> ${pt.latitude.toFixed(5)}, ${pt.longitude.toFixed(5)}<br/>
-                        <strong>Distancia aproximada:</strong> ${distance.toFixed(2)} km<br/>
-                        <p style="color: #666; font-size: 0.9em;">
-                            * La distancia es un estimado en línea recta. La ruta real puede variar.
-                        </p>
-                        <a href="https://www.google.com/maps/search/?api=1&query=${pt.latitude},${pt.longitude}"
-                           target="_blank" rel="noopener">
-                            Ver en Google Maps
-                        </a>
-                    `;
-
-            // Mostrar contenedor de información
-            locationPermissionDiv.style.display = 'none';
-            infoContainer.style.display = 'block';
-        } catch (error) {
-            showError(`No se pudo obtener la distancia: ${error.message}`);
-        }
-    }
-
-    // Función para mostrar errores
-    function showError(message) {
-        locationPermissionDiv.style.display = 'none';
-        infoContainer.style.display = 'none';
-        errorContainer.style.display = 'block';
-        errorContainer.innerHTML = `
-                    <p>${message}</p>
-                    ${pt ? `
-                    <strong>${pt.name}</strong><br/>
-                    ${pt.address}<br/>
-                    <em>Coordenadas:</em> ${pt.latitude.toFixed(5)}, ${pt.longitude.toFixed(5)}<br/>
-                    <a href="https://www.google.com/maps/search/?api=1&query=${pt.latitude},${pt.longitude}"
-                       target="_blank" rel="noopener">
-                        Ver en Google Maps
-                    </a>
-                    ` : ''}
-                `;
-    }
-
-    // Configurar listeners
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Si no hay punto seleccionado, mostrar error
-        if (!pt) {
-            showError('No hay punto de recolección seleccionado');
-            return;
-        }
-
-        try {
-            // Intentar obtener ubicación guardada o solicitar nueva
-            const userLocation = await getStoredOrNewLocation();
-            await getDistanceToCollectionPoint(userLocation);
-        } catch (error) {
-            // Si falla la obtención de ubicación, mostrar botón de permiso
-            locationPermissionDiv.style.display = 'block';
-
-            // Listener para botón de permitir ubicación
-            document.getElementById('allow-location').addEventListener('click', async () => {
-                try {
-                    const userLocation = await getUserLocation();
-                    await getDistanceToCollectionPoint(userLocation);
-                } catch (error) {
-                    // Manejar errores de geolocalización
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            showError('Permiso de ubicación denegado. Por favor, habilite los permisos de ubicación.');
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            showError('Información de ubicación no disponible.');
-                            break;
-                        case error.TIMEOUT:
-                            showError('La solicitud de ubicación ha expirado.');
-                            break;
-                        default:
-                            showError(`Error al obtener ubicación: ${error.message}`);
-                    }
+        
+        // Mostrar información del punto
+        const puntoInfo = document.getElementById('punto-info');
+        puntoInfo.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">${puntoSeleccionado.name}</h5>
+                    <p class="card-text">${puntoSeleccionado.address}</p>
+                    <p class="card-text text-success">Este es el punto de recolección que has seleccionado.</p>
+                </div>
+            </div>
+        `;
+        
+        // Configurar el evento del botón de confirmar
+        document.getElementById('btn-confirmar').addEventListener('click', function() {
+            // Verificar que haya un punto seleccionado
+            if (!puntoSeleccionado) {
+                alert('Selecciona primero un punto de recolección');
+                return;
+            }
+            
+            // Obtener los productos del carrito
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            
+            // Verificar que haya productos en el carrito
+            if (cart.length === 0) {
+                alert('No hay productos en el carrito');
+                return;
+            }
+            
+            // Enviar la información al servidor
+            fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cart: cart,
+                    collectionPointId: puntoSeleccionado.id
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al crear el pedido');
                 }
-            });
-        }
-    });
-
-    // Evento para confirmar pedido
-    document.getElementById('btn-confirmar')?.addEventListener('click', () => {
-        if (!pt) {
-            alert('Selecciona primero un punto de recolección');
-            return;
-        }
-
-        fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                cart: JSON.parse(localStorage.getItem('cart') || '[]'),
-                collectionPointId: pt.id
+                return response.json();
             })
-        })
-            .then(res => {
-                if (!res.ok) throw new Error('Error al confirmar el pedido');
-                return res.json();
-            })
-            .then(() => {
+            .then(data => {
+                // Limpiar el carrito y el punto seleccionado
                 localStorage.removeItem('cart');
                 localStorage.removeItem('puntoSeleccionado');
-                alert('✅ Pedido confirmado');
-                window.location.href = '/Pedidos/Resumen';
+                
+                // Mostrar mensaje de éxito
+                alert('Pedido confirmado exitosamente');
+                
+                // Redireccionar a la página de Resumen con el ID del pedido
+                window.location.href = `/Pedidos/Resumen/${data.id}`;
             })
-            .catch(err => {
-                console.error(err);
-                alert('Ocurrió un error: ' + err.message);
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ocurrió un error al procesar tu pedido. Por favor, intenta nuevamente.');
             });
+        });
     });
 </script>

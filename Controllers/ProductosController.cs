@@ -193,5 +193,125 @@ namespace Proyecto1_MZ_MJ.Controllers
             return R * c; // distancia en km
         }
 
+        public IActionResult PorCategoria(string categoria)
+        {
+            var productosFiltrados = _context.Productos
+                .Where(p => p.Categoria == categoria)
+                .ToList();
+
+            return View(productosFiltrados);
+        }
+
+        [HttpPost]
+        public IActionResult PorCategoria(List<Producto> productosSeleccionados)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(productosSeleccionados);
+            }
+
+            // Procesar y redirigir
+            return RedirectToAction("Seleccionar", "Recoleccion");
+        }
+
+
+        //[HttpPost]
+        //public async Task<IActionResult> AgregarSeleccionados(List<ProductoSeleccionadoInput> seleccionados, int? puntoRecoleccionId = null)
+        //{
+        //    var seleccionadosValidos = seleccionados
+        //        .Where(p => p.Seleccionado && p.Cantidad > 0)
+        //        .ToList();
+
+        //    if (!seleccionadosValidos.Any())
+        //    {
+        //        return BadRequest("Datos inválidos");
+        //    }
+
+        //    // Si estamos en el flujo normal (primera parte), redirigimos a Recoleccion/Seleccionar
+        //    if (puntoRecoleccionId == null)
+        //    {
+        //        // Guardar los productos seleccionados en sesión o TempData para recuperarlos después
+        //        var productosSeleccionados = seleccionadosValidos.Select(p => new { p.ProductoId, p.Cantidad }).ToList();
+        //        HttpContext.Session.SetString("ProductosSeleccionados", System.Text.Json.JsonSerializer.Serialize(productosSeleccionados));
+
+        //        return RedirectToAction("Seleccionar", "Recoleccion");
+        //    }
+
+        //    // Si llegamos aquí es porque ya tenemos un punto de recolección seleccionado
+        //    var puntoRecoleccion = await _context.CollectionPoints.FindAsync(puntoRecoleccionId);
+
+        //    // Obtener la sucursal asociada al punto de recolección o la primera disponible
+        //    var sucursalId = puntoRecoleccion?.SucursalId;
+
+        //    if (sucursalId == null)
+        //    {
+        //        var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+        //        if (sucursal == null)
+        //        {
+        //            // Crear una sucursal si no existe ninguna
+        //            sucursal = new Sucursal
+        //            {
+        //                Nombre = "Verace Pizza",
+        //                Direccion = "Av. de los Shyris N35-52",
+        //                Latitud = -0.180653,
+        //                Longitud = -78.487834
+        //            };
+        //            _context.Sucursales.Add(sucursal);
+        //            await _context.SaveChangesAsync();
+        //        }
+        //        sucursalId = sucursal.Id;
+        //    }
+
+        //    var pedido = new Pedido
+        //    {
+        //        Fecha = DateTime.Now,
+        //        SucursalId = sucursalId.Value,
+        //        PedidoProductos = new List<PedidoProducto>(),
+        //        Estado = "Preparándose"
+        //    };
+
+        //    // Si nuestro modelo tiene un campo para punto de recolección, lo asignamos
+        //    if (puntoRecoleccionId.HasValue)
+        //    {
+        //        // Descomenta esto si tienes un campo PuntoRecoleccionId en tu modelo Pedido
+        //        // pedido.PuntoRecoleccionId = puntoRecoleccionId.Value;
+        //    }
+
+        //    decimal total = 0;
+        //    foreach (var item in seleccionadosValidos)
+        //    {
+        //        var producto = await _context.Productos.FindAsync(item.ProductoId);
+        //        if (producto != null)
+        //        {
+        //            decimal subtotal = producto.Precio * item.Cantidad;
+        //            total += subtotal;
+
+        //            pedido.PedidoProductos.Add(new PedidoProducto
+        //            {
+        //                ProductoId = producto.Id,
+        //                Cantidad = item.Cantidad,
+        //                Precio = producto.Precio
+        //            });
+        //        }
+        //    }
+
+        //    pedido.Total = total;
+
+        //    _context.Pedidos.Add(pedido);
+        //    await _context.SaveChangesAsync();
+
+        //    // Guardamos el ID del pedido en una cookie
+        //    CookieOptions options = new CookieOptions
+        //    {
+        //        Expires = DateTimeOffset.Now.AddMinutes(30)
+        //    };
+        //    Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
+
+        //    // Limpiamos la sesión de productos seleccionados
+        //    HttpContext.Session.Remove("ProductosSeleccionados");
+
+        //    // Redirigimos al resumen del pedido
+        //    return RedirectToAction("Resumen", new { id = pedido.Id });
+        //}
     }
 }

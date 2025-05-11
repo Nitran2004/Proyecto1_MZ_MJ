@@ -266,7 +266,6 @@ public class PedidosController : Controller
         return RedirectToAction("Seleccionar", "Recoleccion");
         //return RedirectToAction("Resumen", new { id = pedido.Id });
     }
-
     public async Task<IActionResult> ResumenAdmin()
     {
         var pedidos = await _context.Pedidos
@@ -278,7 +277,6 @@ public class PedidosController : Controller
 
         return View(pedidos);
     }
-
     public async Task<IActionResult> VerPedidoTemporal()
     {
         if (Request.Cookies.TryGetValue("PedidoTemporalId", out string pedidoIdStr) && int.TryParse(pedidoIdStr, out int pedidoId))
@@ -538,5 +536,142 @@ public class PedidosController : Controller
         return RedirectToAction("Resumen", new { id = pedidoId });
     }
 
+    // En PedidosController.cs
+    [HttpPost]
+    [Route("api/orders")]
+    public async Task<IActionResult> CreateOrder([FromBody] OrderRequest request)
+    {
+        if (request == null || request.Cart == null || request.Cart.Count == 0)
+        {
+            return BadRequest("No se especificaron productos para el pedido");
+        }
+
+        if (request.CollectionPointId <= 0)
+        {
+            return BadRequest("No se especificó un punto de recolección válido");
+        }
+
+        // Crear el pedido
+        var pedido = new Pedido
+        {
+            Fecha = DateTime.Now,
+            Estado = "Preparándose",
+            PedidoProductos = new List<PedidoProducto>()
+        };
+
+        // Buscar punto de recolección
+        var puntoRecoleccion = await _context.CollectionPoints.FindAsync(request.CollectionPointId);
+        if (puntoRecoleccion == null)
+        {
+            return NotFound("Punto de recolección no encontrado");
+        }
+
+        pedido.SucursalId = puntoRecoleccion.SucursalId;
+
+
+        // Agregar productos al pedido
+        decimal total = 0;
+        foreach (var item in request.Cart)
+        {
+            var producto = await _context.Productos.FindAsync(item.ProductoId);
+            if (producto != null)
+            {
+                var pedidoProducto = new PedidoProducto
+                {
+                    ProductoId = producto.Id,
+                    Cantidad = item.Cantidad,
+                    Precio = producto.Precio
+                };
+
+                pedido.PedidoProductos.Add(pedidoProducto);
+                total += producto.Precio * item.Cantidad;
+            }
+        }
+
+        pedido.Total = total;
+
+        // Guardar en la base de datos
+        _context.Pedidos.Add(pedido);
+        await _context.SaveChangesAsync();
+
+        // Devolver el ID del pedido creado
+        return Ok(new { id = pedido.Id });
+    }
+
+    //[HttpPost]
+    //public async Task<IActionResult> AgregarSeleccionados(List<ProductoSeleccionadoInput> seleccionados, int? puntoRecoleccionId = null)
+    //{
+    //    var seleccionadosValidos = seleccionados
+    //        .Where(p => p.Seleccionado && p.Cantidad > 0)
+    //        .ToList();
+
+    //    if (!seleccionadosValidos.Any())
+    //    {
+    //        return BadRequest("Datos inválidos");
+    //    }
+
+    //    // Obtener la primera sucursal directamente de la base de datos
+    //    var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+    //    if (sucursal == null)
+    //    {
+    //        // Crear una sucursal si no existe ninguna
+    //        sucursal = new Sucursal
+    //        {
+    //            Nombre = "Verace Pizza",
+    //            Direccion = "Av. de los Shyris N35-52",
+    //            Latitud = -0.180653,
+    //            Longitud = -78.487834
+    //        };
+    //        _context.Sucursales.Add(sucursal);
+    //        await _context.SaveChangesAsync();
+    //    }
+
+    //    var pedido = new Pedido
+    //    {
+    //        Fecha = DateTime.Now,
+    //        SucursalId = sucursal.Id,
+    //        PedidoProductos = new List<PedidoProducto>()
+    //    };
+
+    //    decimal total = 0;
+
+    //    foreach (var item in seleccionadosValidos)
+    //    {
+    //        var producto = await _context.Productos.FindAsync(item.ProductoId);
+    //        if (producto != null)
+    //        {
+    //            decimal subtotal = producto.Precio * item.Cantidad;
+    //            total += subtotal;
+
+    //            pedido.PedidoProductos.Add(new PedidoProducto
+    //            {
+    //                ProductoId = producto.Id,
+    //                Cantidad = item.Cantidad,
+    //                Precio = producto.Precio
+    //            });
+    //        }
+    //    }
+
+    //    pedido.Total = total;
+
+    //    _context.Pedidos.Add(pedido);
+    //    await _context.SaveChangesAsync();
+
+    //    // Guardar ID del pedido en una cookie por 30 minutos
+    //    CookieOptions options = new CookieOptions
+    //    {
+    //        Expires = DateTimeOffset.Now.AddMinutes(30)
+    //    };
+    //    Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
+
+    //    // Si se proporciona un punto de recolección, redirigir directamente a ese punto
+    //    if (puntoRecoleccionId.HasValue)
+    //    {
+    //        return RedirectToAction("Confirmar", "Recoleccion", new { id = puntoRecoleccionId.Value, pedidoId = pedido.Id });
+    //    }
+
+    //    // Si no hay punto de recolección, seguir con el flujo normal
+    //    return RedirectToAction("Seleccionar", "Recoleccion");
+    //}
 
 }

@@ -1,4 +1,6 @@
-﻿namespace Proyecto1_MZ_MJ.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Proyecto1_MZ_MJ.Models
 {
     public class Producto
     {
@@ -22,6 +24,9 @@
 
         // Relación con PedidoProducto
         public ICollection<PedidoProducto>? PedidoProductos { get; set; }
+
+        [NotMapped]
+        public bool Seleccionado { get; set; }
 
     }
 
