@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Proyecto1_MZ_MJ.Data;
 using Proyecto1_MZ_MJ.Models;
-using System.Linq;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Proyecto1_MZ_MJ.Models.DTOs;
-using Microsoft.AspNetCore.Http;
+
 
 public class PedidosController : Controller
 {
@@ -677,6 +676,92 @@ public class PedidosController : Controller
 
         // Redirigir a la página de resumen del pedido
         return RedirectToAction("Resumen", new { id = pedido.Id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CrearDesdeCarrito(string pedidoJson)
+    {
+        if (string.IsNullOrEmpty(pedidoJson))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        try
+        {
+            // Usa la clase CarritoItem sin el namespace, ya que ya deberías tener
+            // using Proyecto1_MZ_MJ.Models; al inicio del archivo
+            var itemsCarrito = System.Text.Json.JsonSerializer.Deserialize<List<CarritoItem>>(pedidoJson);
+
+            if (itemsCarrito == null || !itemsCarrito.Any())
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            // El resto del método permanece igual
+            var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+            if (sucursal == null)
+            {
+                sucursal = new Sucursal
+                {
+                    Nombre = "Verace Pizza",
+                    Direccion = "Av. de los Shyris N35-52",
+                    Latitud = -0.180653,
+                    Longitud = -78.487834
+                };
+                _context.Sucursales.Add(sucursal);
+                await _context.SaveChangesAsync();
+            }
+
+            var pedido = new Pedido
+            {
+                Fecha = DateTime.Now,
+                SucursalId = sucursal.Id,
+                PedidoProductos = new List<PedidoProducto>(),
+                Estado = "Preparándose"
+            };
+
+            decimal total = 0;
+            foreach (var item in itemsCarrito)
+            {
+                if (int.TryParse(item.Id, out int productoId))
+                {
+                    var producto = await _context.Productos.FindAsync(productoId);
+                    if (producto != null)
+                    {
+                        decimal subtotal = item.Precio * item.Cantidad;
+                        total += subtotal;
+
+                        pedido.PedidoProductos.Add(new PedidoProducto
+                        {
+                            ProductoId = productoId,
+                            Cantidad = item.Cantidad,
+                            Precio = item.Precio,
+                            Producto = producto
+                        });
+                    }
+                }
+            }
+
+            pedido.Total = total;
+
+            _context.Pedidos.Add(pedido);
+            await _context.SaveChangesAsync();
+
+            CookieOptions options = new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddMinutes(30)
+            };
+            Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
+
+            TempData["LimpiarCarrito"] = true;
+
+            return RedirectToAction("Resumen", new { id = pedido.Id });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al procesar el carrito: {ex.Message}");
+            return RedirectToAction("Index", "Home");
+        }
     }
 
     //[HttpPost]
