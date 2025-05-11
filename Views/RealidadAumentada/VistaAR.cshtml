@@ -9,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Simple - @Model.Nombre</title>
+    <title>AR - @Model.Nombre</title>
 
     <!-- Incluimos Three.js para el renderizado 3D -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
@@ -20,6 +20,7 @@
             padding: 0;
             overflow: hidden;
             background-color: #000;
+            font-family: Arial, sans-serif;
         }
 
         #video-container {
@@ -131,6 +132,18 @@
                 cursor: pointer;
                 pointer-events: auto;
             }
+
+        .device-message {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 4;
+        }
     </style>
 </head>
 <body>
@@ -152,35 +165,61 @@
             <div class="product-name">@Model.Nombre</div>
             <div class="product-price">$@Model.Precio</div>
         </div>
+
+        <div class="device-message" id="device-message"></div>
     </div>
 
     <!-- Instrucciones iniciales -->
     <div class="instructions" id="instructions">
-        <h3>Realidad Aumentada</h3>
-        <p>Esta experiencia muestra un cubo rojo 3D usando la cámara de tu dispositivo.</p>
-        <button id="start-button">Iniciar AR</button>
+        <h3>Experiencia 3D</h3>
+        <p id="instruction-text">Cargando...</p>
+        <button id="start-button">Iniciar</button>
     </div>
 
     <script>
         let camera, scene, renderer;
         let cube;
         let videoElement;
+        let isMobile = false;
 
         document.addEventListener('DOMContentLoaded', function() {
             const startButton = document.getElementById('start-button');
             const instructions = document.getElementById('instructions');
+            const instructionText = document.getElementById('instruction-text');
+            const deviceMessage = document.getElementById('device-message');
+
+            // Detectar tipo de dispositivo
+            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                if (isAndroid) {
+                    instructionText.textContent = "Esta experiencia usará la cámara de tu dispositivo para mostrar un cubo rojo 3D.";
+                    deviceMessage.textContent = "Modo Android AR";
+                } else {
+                    instructionText.textContent = "Esta experiencia muestra un cubo rojo 3D con la cámara de tu dispositivo móvil.";
+                    deviceMessage.textContent = "Modo móvil";
+                }
+            } else {
+                instructionText.textContent = "Esta experiencia muestra un cubo rojo 3D en un entorno virtual.";
+                deviceMessage.textContent = "Modo escritorio";
+            }
 
             startButton.addEventListener('click', function() {
                 // Ocultar instrucciones
                 instructions.style.display = 'none';
 
-                // Iniciar experiencia AR
-                initAR();
+                // Iniciar experiencia AR o 3D según el dispositivo
+                if (isMobile) {
+                    initAR();
+                } else {
+                    initDesktop3D();
+                }
             });
         });
 
         async function initAR() {
-            // Configurar video (cámara)
+            // Configurar video (cámara) para dispositivos móviles
             try {
                 await setupCamera();
 
@@ -192,7 +231,21 @@
             } catch (error) {
                 console.error('Error inicializando AR:', error);
                 alert('Error al acceder a la cámara: ' + error.message);
+
+                // Fallback a modo escritorio si falla la cámara
+                initDesktop3D();
             }
+        }
+
+        function initDesktop3D() {
+            // Ocultar contenedor de video para escritorio
+            document.getElementById('video-container').style.display = 'none';
+
+            // Inicializar escena 3D con entorno
+            initThreeJS(true);
+
+            // Animar escena
+            animate();
         }
 
         async function setupCamera() {
@@ -219,9 +272,34 @@
             });
         }
 
-        function initThreeJS() {
+        function initThreeJS(isDesktop = false) {
             // Configurar escena
             scene = new THREE.Scene();
+
+            // Para escritorio, agregar fondo y luces
+            if (isDesktop) {
+                // Color de fondo para la escena
+                scene.background = new THREE.Color(0x87CEEB); // Azul cielo
+
+                // Añadir luces
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 10, 7.5);
+                scene.add(directionalLight);
+
+                // Añadir un "suelo"
+                const planeGeometry = new THREE.PlaneGeometry(20, 20);
+                const planeMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x8BC34A,  // Verde
+                    side: THREE.DoubleSide
+                });
+                const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                plane.rotation.x = -Math.PI / 2; // Rotar para que sea horizontal
+                plane.position.y = -1; // Colocar debajo del cubo
+                scene.add(plane);
+            }
 
             // Configurar cámara
             const width = window.innerWidth;
@@ -234,20 +312,34 @@
             camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
             camera.position.z = 5;
 
+            // Para escritorio, ajustar la posición de la cámara
+            if (isDesktop) {
+                camera.position.set(3, 3, 5);
+                camera.lookAt(0, 0, 0);
+            }
+
             // Configurar renderer
             renderer = new THREE.WebGLRenderer({
                 canvas: document.getElementById('ar-canvas'),
-                alpha: true // Fondo transparente para ver la cámara
+                alpha: !isDesktop // Fondo transparente solo para móvil
             });
             renderer.setSize(width, height);
 
             // Crear cubo rojo
             const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xff0000,
+                metalness: 0.3,
+                roughness: 0.4
+            });
             cube = new THREE.Mesh(geometry, material);
 
-            // Posicionar el cubo frente a la cámara
-            cube.position.set(0, 0, -3);
+            // Posicionar el cubo
+            if (isDesktop) {
+                cube.position.set(0, 0, 0);
+            } else {
+                cube.position.set(0, 0, -3); // Frente a la cámara para móvil
+            }
 
             // Añadir cubo a la escena
             scene.add(cube);
