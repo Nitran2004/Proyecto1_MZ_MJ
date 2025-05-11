@@ -1,100 +1,280 @@
 ﻿@model Proyecto1_MZ_MJ.Models.Producto
 @{
     ViewData["Title"] = "Realidad Aumentada - " + Model.Nombre;
-    Layout = "_Layout";
+    Layout = null;
 }
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Simple - @Model.Nombre</title>
 
-<style>
-    .ar-container {
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        overflow: hidden;
-    }
+    <!-- Incluimos Three.js para el renderizado 3D -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
 
-    .back-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
-        background-color: rgba(0, 0, 0, 0.5);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        cursor: pointer;
-    }
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
 
-    .product-info {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        z-index: 1000;
-        background-color: rgba(0, 0, 0, 0.5);
-        color: white;
-        padding: 10px;
-        border-radius: 10px;
-        max-width: 300px;
-    }
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
 
-    .product-name {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
+        #ar-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
 
-    .product-price {
-        font-size: 16px;
-    }
+        #video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-    /* Ocultar elementos de la interfaz de A-Frame */
-    .a-enter-vr, .a-orientation-modal {
-        display: none !important;
-    }
-</style>
+        .ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
 
-<div class="ar-container">
-    <button class="back-button" onclick="history.back()">
-        <i class="fas fa-arrow-left"></i>
-    </button>
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 4;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
 
-    <div class="product-info">
-        <div class="product-name">@Model.Nombre</div>
-        <div class="product-price">Precio: $@Model.Precio</div>
+        .product-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 4;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 300px;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .product-price {
+            font-size: 16px;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 5;
+            width: 80%;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+            .instructions button {
+                background-color: #ff4081;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 10px 20px;
+                margin-top: 15px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                pointer-events: auto;
+            }
+    </style>
+</head>
+<body>
+    <!-- Contenedor de video (cámara) -->
+    <div id="video-container">
+        <video id="video" autoplay playsinline></video>
     </div>
 
-    <!-- Escena de A-Frame para AR -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-        <!-- Marcador por defecto (patrón Hiro) -->
-        <a-marker preset="hiro">
-            <!-- Cubo rojo 3D -->
-            <a-box position="0 0.5 0" material="color: red;" scale="1 1 1" animation="property: rotation; to: 0 360 0; loop: true; dur: 5000; easing: linear;"></a-box>
-        </a-marker>
+    <!-- Canvas para renderizar el cubo 3D -->
+    <canvas id="ar-canvas"></canvas>
 
-        <!-- Cámara -->
-        <a-entity camera></a-entity>
-    </a-scene>
-</div>
+    <!-- Capa de UI -->
+    <div class="ui-layer">
+        <button class="back-button" onclick="window.location.href='/Productos/Detalle/@Model.Id'">
+            ←
+        </button>
 
-<script>
-    // Solicitar permiso para la cámara al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                // El permiso fue concedido
-                stream.getTracks().forEach(track => track.stop());
-            })
-            .catch(function(err) {
-                alert('Para experimentar la realidad aumentada, por favor permite el acceso a la cámara.');
+        <div class="product-info">
+            <div class="product-name">@Model.Nombre</div>
+            <div class="product-price">$@Model.Precio</div>
+        </div>
+    </div>
+
+    <!-- Instrucciones iniciales -->
+    <div class="instructions" id="instructions">
+        <h3>Realidad Aumentada</h3>
+        <p>Esta experiencia muestra un cubo rojo 3D usando la cámara de tu dispositivo.</p>
+        <button id="start-button">Iniciar AR</button>
+    </div>
+
+    <script>
+        let camera, scene, renderer;
+        let cube;
+        let videoElement;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('start-button');
+            const instructions = document.getElementById('instructions');
+
+            startButton.addEventListener('click', function() {
+                // Ocultar instrucciones
+                instructions.style.display = 'none';
+
+                // Iniciar experiencia AR
+                initAR();
             });
-    });
-</script>
+        });
+
+        async function initAR() {
+            // Configurar video (cámara)
+            try {
+                await setupCamera();
+
+                // Inicializar escena 3D
+                initThreeJS();
+
+                // Animar escena
+                animate();
+            } catch (error) {
+                console.error('Error inicializando AR:', error);
+                alert('Error al acceder a la cámara: ' + error.message);
+            }
+        }
+
+        async function setupCamera() {
+            videoElement = document.getElementById('video');
+
+            // Solicitar acceso a la cámara trasera
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                    facingMode: 'environment', // Usar cámara trasera
+                    width: { ideal: window.innerWidth },
+                    height: { ideal: window.innerHeight }
+                }
+            });
+
+            videoElement.srcObject = stream;
+
+            // Esperar a que el video esté listo
+            return new Promise((resolve) => {
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play();
+                    resolve();
+                };
+            });
+        }
+
+        function initThreeJS() {
+            // Configurar escena
+            scene = new THREE.Scene();
+
+            // Configurar cámara
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const fieldOfView = 75;
+            const aspectRatio = width / height;
+            const nearPlane = 0.1;
+            const farPlane = 1000;
+
+            camera = new THREE.PerspectiveCamera(fieldOfView, aspectRatio, nearPlane, farPlane);
+            camera.position.z = 5;
+
+            // Configurar renderer
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('ar-canvas'),
+                alpha: true // Fondo transparente para ver la cámara
+            });
+            renderer.setSize(width, height);
+
+            // Crear cubo rojo
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            cube = new THREE.Mesh(geometry, material);
+
+            // Posicionar el cubo frente a la cámara
+            cube.position.set(0, 0, -3);
+
+            // Añadir cubo a la escena
+            scene.add(cube);
+
+            // Manejar redimensionamiento de la ventana
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function onWindowResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotar el cubo
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            // Renderizar escena
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
