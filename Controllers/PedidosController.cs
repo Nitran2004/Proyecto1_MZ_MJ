@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Proyecto1_MZ_MJ.Data;
 using Proyecto1_MZ_MJ.Models;
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Proyecto1_MZ_MJ.Models.DTOs;
@@ -596,6 +597,86 @@ public class PedidosController : Controller
 
         // Devolver el ID del pedido creado
         return Ok(new { id = pedido.Id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ProcesarSeleccionMultiple(List<ProductoSeleccionadoInput> seleccionados)
+    {
+        if (seleccionados == null)
+        {
+            return RedirectToAction("SeleccionMultiple", "Productos");
+        }
+
+        // Filtrar solo los productos que han sido seleccionados y tienen cantidad > 0
+        var seleccionadosValidos = seleccionados
+            .Where(p => p.Seleccionado && p.Cantidad > 0)
+            .ToList();
+
+        if (!seleccionadosValidos.Any())
+        {
+            // Si no hay productos seleccionados válidos, redirigir de vuelta
+            return RedirectToAction("SeleccionMultiple", "Productos");
+        }
+
+        // Obtener la sucursal (asumimos que existe al menos una)
+        var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+        if (sucursal == null)
+        {
+            // Crear una sucursal predeterminada si no existe ninguna
+            sucursal = new Sucursal
+            {
+                Nombre = "Verace Pizza",
+                Direccion = "Av. de los Shyris N35-52",
+                Latitud = -0.180653,
+                Longitud = -78.487834
+            };
+            _context.Sucursales.Add(sucursal);
+            await _context.SaveChangesAsync();
+        }
+
+        // Crear el pedido
+        var pedido = new Pedido
+        {
+            Fecha = DateTime.Now,
+            SucursalId = sucursal.Id,
+            PedidoProductos = new List<PedidoProducto>(),
+            Estado = "Preparándose"
+        };
+
+        // Agregar productos al pedido
+        decimal total = 0;
+        foreach (var item in seleccionadosValidos)
+        {
+            var producto = await _context.Productos.FindAsync(item.ProductoId);
+            if (producto != null)
+            {
+                decimal subtotal = producto.Precio * item.Cantidad;
+                total += subtotal;
+
+                pedido.PedidoProductos.Add(new PedidoProducto
+                {
+                    ProductoId = producto.Id,
+                    Cantidad = item.Cantidad,
+                    Precio = producto.Precio
+                });
+            }
+        }
+
+        pedido.Total = total;
+
+        _context.Pedidos.Add(pedido);
+        await _context.SaveChangesAsync();
+
+        // Guardar ID del pedido en una cookie
+        CookieOptions options = new CookieOptions
+        {
+            Expires = DateTimeOffset.Now.AddMinutes(30)
+        };
+        Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
+
+        // Redirigir a la página de resumen del pedido
+        return RedirectToAction("Resumen", new { id = pedido.Id });
     }
 
     //[HttpPost]

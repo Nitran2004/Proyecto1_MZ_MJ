@@ -214,6 +214,108 @@ namespace Proyecto1_MZ_MJ.Controllers
             return RedirectToAction("Seleccionar", "Recoleccion");
         }
 
+        // 1. Primero, vamos a crear un nuevo método en ProductosController.cs para la página de selección múltiple
+
+        // Añade este método al ProductosController.cs
+        public async Task<IActionResult> SeleccionMultiple()
+        {
+            var productos = await _context.Productos.ToListAsync();
+            var categorias = productos.Select(p => p.Categoria).Distinct().ToList();
+
+            ViewBag.Categorias = categorias;
+
+            return View(productos);
+        }
+
+        // 2. Ahora creamos un ViewModel para gestionar los productos seleccionados
+        // Crea un nuevo archivo en Models/CarritoViewModel.cs
+
+        /*
+        namespace Proyecto1_MZ_MJ.Models
+        {
+            public class CarritoViewModel
+            {
+                public List<ProductoSeleccionado> ProductosSeleccionados { get; set; } = new List<ProductoSeleccionado>();
+                public decimal Total => ProductosSeleccionados.Sum(p => p.Precio * p.Cantidad);
+                public int CantidadTotal => ProductosSeleccionados.Sum(p => p.Cantidad);
+            }
+        }
+        */
+
+        // 3. Añade este método al PedidosController.cs para procesar múltiples productos
+
+        [HttpPost]
+        public async Task<IActionResult> ProcesarSeleccionMultiple(List<ProductoSeleccionadoInput> seleccionados)
+        {
+            // Filtrar solo los productos que han sido seleccionados y tienen cantidad > 0
+            var seleccionadosValidos = seleccionados
+                .Where(p => p.Seleccionado && p.Cantidad > 0)
+                .ToList();
+
+            if (!seleccionadosValidos.Any())
+            {
+                return RedirectToAction("SeleccionMultiple", "Productos");
+            }
+
+            // Obtener la sucursal (asumimos que existe al menos una)
+            var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+            if (sucursal == null)
+            {
+                // Crear una sucursal predeterminada si no existe ninguna
+                sucursal = new Sucursal
+                {
+                    Nombre = "Verace Pizza",
+                    Direccion = "Av. de los Shyris N35-52",
+                    Latitud = -0.180653,
+                    Longitud = -78.487834
+                };
+                _context.Sucursales.Add(sucursal);
+                await _context.SaveChangesAsync();
+            }
+
+            // Crear el pedido
+            var pedido = new Pedido
+            {
+                Fecha = DateTime.Now,
+                SucursalId = sucursal.Id,
+                PedidoProductos = new List<PedidoProducto>(),
+                Estado = "Preparándose"
+            };
+
+            // Agregar productos al pedido
+            decimal total = 0;
+            foreach (var item in seleccionadosValidos)
+            {
+                var producto = await _context.Productos.FindAsync(item.ProductoId);
+                if (producto != null)
+                {
+                    decimal subtotal = producto.Precio * item.Cantidad;
+                    total += subtotal;
+
+                    pedido.PedidoProductos.Add(new PedidoProducto
+                    {
+                        ProductoId = producto.Id,
+                        Cantidad = item.Cantidad,
+                        Precio = producto.Precio
+                    });
+                }
+            }
+
+            pedido.Total = total;
+
+            _context.Pedidos.Add(pedido);
+            await _context.SaveChangesAsync();
+
+            // Guardar ID del pedido en una cookie
+            CookieOptions options = new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddMinutes(30)
+            };
+            Response.Cookies.Append("PedidoTemporalId", pedido.Id.ToString(), options);
+
+            return RedirectToAction("Resumen", new { id = pedido.Id });
+        }
+
 
         //[HttpPost]
         //public async Task<IActionResult> AgregarSeleccionados(List<ProductoSeleccionadoInput> seleccionados, int? puntoRecoleccionId = null)
