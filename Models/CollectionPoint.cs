@@ -11,6 +11,9 @@ namespace Proyecto1_MZ_MJ.Models
         [Required]
         public string Name { get; set; }
 
+        public string Descripcion { get; set; }
+
+
         [Required]
         public string Address { get; set; }
 

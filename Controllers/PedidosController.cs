@@ -279,20 +279,75 @@ public class PedidosController : Controller
     }
     public async Task<IActionResult> VerPedidoTemporal()
     {
-        if (Request.Cookies.TryGetValue("PedidoTemporalId", out string pedidoIdStr) && int.TryParse(pedidoIdStr, out int pedidoId))
+        int? pedidoId = null;
+
+        // 1. Intentar obtener el ID del pedido de la sesión (prioridad más alta)
+        pedidoId = HttpContext.Session.GetInt32("PedidoActualId");
+
+        // 2. Si no está en la sesión, intentar obtenerlo de la cookie PedidoActualId
+        if (!pedidoId.HasValue && Request.Cookies.TryGetValue("PedidoActualId", out string pedidoActualIdStr))
+        {
+            if (int.TryParse(pedidoActualIdStr, out int id))
+            {
+                pedidoId = id;
+            }
+        }
+
+        // 3. Si aún no hay ID, intentar obtenerlo de la cookie PedidoTemporalId
+        if (!pedidoId.HasValue && Request.Cookies.TryGetValue("PedidoTemporalId", out string pedidoTemporalIdStr))
+        {
+            if (int.TryParse(pedidoTemporalIdStr, out int id))
+            {
+                pedidoId = id;
+            }
+        }
+
+        // Si encontramos un ID de pedido, intentar cargar el pedido
+        if (pedidoId.HasValue)
         {
             var pedido = await _context.Pedidos
                 .Include(p => p.PedidoProductos)
                     .ThenInclude(pp => pp.Producto)
                 .Include(p => p.Sucursal)
-                .FirstOrDefaultAsync(p => p.Id == pedidoId);
+                .FirstOrDefaultAsync(p => p.Id == pedidoId.Value);
 
             if (pedido != null)
             {
+                // Actualizar ambas formas de almacenamiento para futuras referencias
+                HttpContext.Session.SetInt32("PedidoActualId", pedido.Id);
+
+                Response.Cookies.Append("PedidoActualId", pedido.Id.ToString(), new CookieOptions
+                {
+                    Expires = DateTimeOffset.Now.AddDays(1)
+                });
+
                 return View("Resumen", pedido);
             }
         }
 
+        // Si no se encuentra ningún pedido, buscar el pedido más reciente
+        var pedidoMasReciente = await _context.Pedidos
+            .Include(p => p.PedidoProductos)
+                .ThenInclude(pp => pp.Producto)
+            .Include(p => p.Sucursal)
+            .OrderByDescending(p => p.Fecha)
+            .FirstOrDefaultAsync();
+
+        if (pedidoMasReciente != null)
+        {
+            // Actualizar ambas formas de almacenamiento para futuras referencias
+            HttpContext.Session.SetInt32("PedidoActualId", pedidoMasReciente.Id);
+
+            Response.Cookies.Append("PedidoActualId", pedidoMasReciente.Id.ToString(), new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddDays(1)
+            });
+
+            return View("Resumen", pedidoMasReciente);
+        }
+
+        // Si no hay pedidos, redirigir al inicio
+        TempData["Mensaje"] = "No se encontró ningún pedido reciente";
         return RedirectToAction("Index", "Home");
     }
 
@@ -763,6 +818,73 @@ public class PedidosController : Controller
             return RedirectToAction("Index", "Home");
         }
     }
+
+    [HttpPost]
+    public IActionResult ProcesarCarrito(string pedidoJson)
+    {
+        if (string.IsNullOrEmpty(pedidoJson))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        // Guardamos los datos del carrito en TempData para recuperarlos después
+        TempData["DatosCarrito"] = pedidoJson;
+
+        // Redireccionamos a la selección de punto de recolección
+        return RedirectToAction("Seleccionar", "Recoleccion");
+    }
+
+    private async Task<int> CrearPedidoDesdeCarrito(string pedidoJson, int sucursalId)
+    {
+        var itemsCarrito = System.Text.Json.JsonSerializer.Deserialize<List<CarritoItem>>(pedidoJson);
+
+        var pedido = new Pedido
+        {
+            Fecha = DateTime.Now,
+            SucursalId = sucursalId,
+            PedidoProductos = new List<PedidoProducto>(),
+            Estado = "Preparándose"
+        };
+
+        _context.Pedidos.Add(pedido);
+        await _context.SaveChangesAsync();
+
+        decimal total = 0;
+
+        foreach (var item in itemsCarrito)
+        {
+            if (int.TryParse(item.Id, out int productoId))
+            {
+                var producto = await _context.Productos.FindAsync(productoId);
+                if (producto != null)
+                {
+                    decimal subtotal = item.Precio * item.Cantidad;
+                    total += subtotal;
+
+                    var pedidoProducto = new PedidoProducto
+                    {
+                        PedidoId = pedido.Id,
+                        ProductoId = productoId,
+                        Cantidad = item.Cantidad,
+                        Precio = item.Precio
+                    };
+
+                    _context.PedidoProductos.Add(pedidoProducto);
+                }
+            }
+        }
+
+        pedido.Total = total;
+        _context.Update(pedido);
+        await _context.SaveChangesAsync();
+
+        // Indicar que se debe limpiar el carrito
+        TempData["LimpiarCarrito"] = true;
+
+        return pedido.Id;
+    }
+
+
 
     //[HttpPost]
     //public async Task<IActionResult> AgregarSeleccionados(List<ProductoSeleccionadoInput> seleccionados, int? puntoRecoleccionId = null)

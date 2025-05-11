@@ -1,90 +1,59 @@
-﻿@{
+﻿@model Proyecto1_MZ_MJ.Models.CollectionPoint
+@{
     ViewData["Title"] = "Confirmar Punto de Recolección";
 }
 
-<div class="container">
-    <h2>Confirmar Punto de Recolección</h2>
-    
-    <div id="punto-info" class="punto-info mb-4">
-        <!-- Aquí se mostrará la información del punto seleccionado -->
-    </div>
-    
-    <div class="text-center mt-4">
-        <button id="btn-confirmar" class="btn btn-primary">Confirmar pedido</button>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Recuperar el punto seleccionado del localStorage
-        const puntoSeleccionado = JSON.parse(localStorage.getItem('puntoSeleccionado'));
-        
-        if (!puntoSeleccionado) {
-            window.location.href = '/Recoleccion/Seleccionar';
-            return;
-        }
-        
-        // Mostrar información del punto
-        const puntoInfo = document.getElementById('punto-info');
-        puntoInfo.innerHTML = `
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">${puntoSeleccionado.name}</h5>
-                    <p class="card-text">${puntoSeleccionado.address}</p>
-                    <p class="card-text text-success">Este es el punto de recolección que has seleccionado.</p>
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h2 class="mb-0">Confirma tu punto de recolección</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Detalles del punto de recolección</h5>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">@Model.Name</h5>
+                            <p class="card-text">
+                                <strong>Sucursal:</strong> @Model.Sucursal.Nombre<br />
+                                <strong>Dirección:</strong> @Model.Sucursal.Direccion<br />
+                                <strong>Descripción:</strong> @Model.Descripcion
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Instrucciones</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Una vez confirmes tu pedido:</p>
+                            <ul>
+                                <li>Recibirás una confirmación con el número de tu pedido</li>
+                                <li>Podrás recoger tu pedido en el punto seleccionado en aproximadamente 20-30 minutos</li>
+                                <li>Cuando llegues, menciona el número de tu pedido</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
-        `;
-        
-        // Configurar el evento del botón de confirmar
-        document.getElementById('btn-confirmar').addEventListener('click', function() {
-            // Verificar que haya un punto seleccionado
-            if (!puntoSeleccionado) {
-                alert('Selecciona primero un punto de recolección');
-                return;
-            }
-            
-            // Obtener los productos del carrito
-            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            
-            // Verificar que haya productos en el carrito
-            if (cart.length === 0) {
-                alert('No hay productos en el carrito');
-                return;
-            }
-            
-            // Enviar la información al servidor
-            fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    cart: cart,
-                    collectionPointId: puntoSeleccionado.id
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error al crear el pedido');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Limpiar el carrito y el punto seleccionado
-                localStorage.removeItem('cart');
-                localStorage.removeItem('puntoSeleccionado');
-                
-                // Mostrar mensaje de éxito
-                alert('Pedido confirmado exitosamente');
-                
-                // Redireccionar a la página de Resumen con el ID del pedido
-                window.location.href = `/Pedidos/Resumen/${data.id}`;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Ocurrió un error al procesar tu pedido. Por favor, intenta nuevamente.');
-            });
-        });
-    });
-</script>
+
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="@Url.Action("Seleccionar", "Recoleccion")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Elegir otro punto
+                </a>
+
+                <form asp-action="FinalizarPedido" asp-controller="Recoleccion" method="post">
+                    <input type="hidden" name="puntoRecoleccionId" value="@ViewBag.PuntoRecoleccionId" />
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirmar y finalizar pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -174,7 +174,7 @@
         }
     </div>
 
-    <form id="carrito-form" asp-controller="Pedidos" asp-action="ProcesarSeleccionMultiple" method="post">
+    <form asp-controller="Productos" asp-action="ProcesarSeleccionMultiple" method="post">
         @Html.AntiForgeryToken()
         <!-- Contenedor de productos -->
         <div class="product-grid">
@@ -217,14 +217,10 @@
             }
         </div>
 
-        <!-- Panel flotante del carrito -->
-        <div class="add-to-cart-container">
-            <div class="cart-summary">
-                <div>Total: <span class="cart-total">$0.00</span></div>
-                <div>Productos: <span class="cart-count">0</span></div>
-            </div>
-            <button type="submit" class="add-to-cart-btn" id="submit-btn" disabled>
-                Realizar pedido
+        <!-- Al final del formulario: -->
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-shopping-cart me-2"></i> Continuar con el pedido
             </button>
         </div>
     </form>

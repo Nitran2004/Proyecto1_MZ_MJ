@@ -108,7 +108,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Seguir Comprando</button>
-                    <form asp-controller="Pedidos" asp-action="CrearDesdeCarrito" method="post">
+                    <form asp-controller="Pedidos" asp-action="ProcesarCarrito" method="post">
                         <input type="hidden" id="pedido-json" name="pedidoJson" value="" />
                         <button type="submit" class="btn btn-success">Procesar Pedido</button>
                     </form>
