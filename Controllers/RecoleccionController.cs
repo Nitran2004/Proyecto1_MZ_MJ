@@ -89,7 +89,7 @@ namespace Proyecto1_MZ_MJ.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Confirmar(int id)
+        public async Task<IActionResult> Confirmar(int id, double? userLat, double? userLng, double? distancia)
         {
             // Mantener los datos en TempData
             TempData.Keep("ProductosSeleccionados");
@@ -105,8 +105,58 @@ namespace Proyecto1_MZ_MJ.Controllers
                 return NotFound();
             }
 
+            // Pasar todos los valores necesarios a la vista
             ViewBag.PuntoRecoleccionId = id;
+            ViewBag.UserLat = userLat ?? -0.1857;
+            ViewBag.UserLng = userLng ?? -78.4954;
+
+            // Si se recibió la distancia, usarla; si no, calcularla
+            if (distancia.HasValue)
+            {
+                ViewBag.Distancia = distancia.Value;
+            }
+            else
+            {
+                // Calcular la distancia si no se pasó
+                double distanciaCalculada = CalcularDistancia(
+                    ViewBag.UserLat,
+                    ViewBag.UserLng,
+                    puntoRecoleccion.Sucursal.Latitud,
+                    puntoRecoleccion.Sucursal.Longitud
+                );
+                ViewBag.Distancia = Math.Round(distanciaCalculada, 2);
+            }
+
+            // Si estás trabajando con un pedido específico
+            if (TempData.ContainsKey("PedidoTemporalId"))
+            {
+                ViewBag.PedidoId = TempData["PedidoTemporalId"];
+                TempData.Keep("PedidoTemporalId");
+            }
+
             return View(puntoRecoleccion);
+        }
+
+        // Método auxiliar para calcular la distancia
+        private double CalcularDistancia(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371; // Radio de la Tierra en kilómetros
+
+            double dLat = ToRadians(lat2 - lat1);
+            double dLon = ToRadians(lon2 - lon1);
+
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            return R * c;
+        }
+
+        private double ToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180;
         }
 
         [HttpPost]
