@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proyecto1_MZ_MJ.Data;
 
@@ -11,9 +12,10 @@ using Proyecto1_MZ_MJ.Data;
 namespace Proyecto1_MZ_MJ.Migrations
 {
     [DbContext(typeof(Proyecto1_MZ_MJContext))]
-    partial class Proyecto1_MZ_MJContextModelSnapshot : ModelSnapshot
+    [Migration("20250512041547_66646")]
+    partial class _66646
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -171,9 +173,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("PuntoRecoleccionId")
-                        .HasColumnType("int");
-
                     b.Property<int>("SucursalId")
                         .HasColumnType("int");
 
@@ -184,8 +183,6 @@ namespace Proyecto1_MZ_MJ.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PuntoRecoleccionId");
 
                     b.HasIndex("SucursalId");
 
@@ -361,17 +358,11 @@ namespace Proyecto1_MZ_MJ.Migrations
 
             modelBuilder.Entity("Proyecto1_MZ_MJ.Models.Pedido", b =>
                 {
-                    b.HasOne("Proyecto1_MZ_MJ.Models.CollectionPoint", "PuntoRecoleccion")
-                        .WithMany()
-                        .HasForeignKey("PuntoRecoleccionId");
-
                     b.HasOne("Proyecto1_MZ_MJ.Models.Sucursal", "Sucursal")
                         .WithMany()
                         .HasForeignKey("SucursalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("PuntoRecoleccion");
 
                     b.Navigation("Sucursal");
                 });

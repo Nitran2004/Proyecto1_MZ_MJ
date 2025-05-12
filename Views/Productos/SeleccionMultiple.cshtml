@@ -342,5 +342,11 @@
             // Inicializar
             updateCartSummary();
         });
+        // Al enviar el formulario
+        document.querySelector('form').addEventListener('submit', function (e) {
+            console.log('Enviando formulario...');
+            const selectedCount = document.querySelectorAll('.producto-checkbox:checked').length;
+            console.log('Productos seleccionados:', selectedCount);
+        });
     </script>
 }

@@ -17,6 +17,16 @@ namespace Proyecto1_MZ_MJ.Controllers
 
         public async Task<IActionResult> Seleccionar()
         {
+            // Verificar si tenemos datos para procesar
+            if (!TempData.ContainsKey("ProductosSeleccionados") && !TempData.ContainsKey("DatosCarrito"))
+            {
+                return RedirectToAction("SeleccionMultiple", "Productos", new { mensaje = "No hay productos seleccionados" });
+            }
+
+            // Mantener los datos en TempData
+            TempData.Keep("ProductosSeleccionados");
+            TempData.Keep("DatosCarrito");
+
             // Obtener todos los puntos de recolección
             var puntosRecoleccion = await _context.CollectionPoints
                 .Include(p => p.Sucursal)
@@ -25,15 +35,66 @@ namespace Proyecto1_MZ_MJ.Controllers
             // Verificar que existan puntos de recolección
             if (!puntosRecoleccion.Any())
             {
-                return RedirectToAction("Index", "Home", new { mensaje = "No hay puntos de recolección disponibles" });
+                // Intentar crear puntos de recolección si no existen
+                await CrearPuntosRecoleccionPorDefecto();
+
+                // Volver a cargar
+                puntosRecoleccion = await _context.CollectionPoints
+                    .Include(p => p.Sucursal)
+                    .ToListAsync();
+
+                if (!puntosRecoleccion.Any())
+                {
+                    return RedirectToAction("Index", "Home", new { mensaje = "No hay puntos de recolección disponibles" });
+                }
             }
 
             return View(puntosRecoleccion);
         }
 
+        private async Task CrearPuntosRecoleccionPorDefecto()
+        {
+            // Verificar si existe al menos una sucursal
+            var sucursal = await _context.Sucursales.FirstOrDefaultAsync();
+
+            if (sucursal == null)
+            {
+                sucursal = new Sucursal
+                {
+                    Nombre = "Verace Pizza",
+                    Direccion = "Av. de los Shyris N35-52",
+                    Latitud = -0.180653,
+                    Longitud = -78.487834
+                };
+                _context.Sucursales.Add(sucursal);
+                await _context.SaveChangesAsync();
+            }
+
+            // Crear puntos de recolección por defecto
+            var puntosDefault = new List<CollectionPoint>
+            {
+                new CollectionPoint
+                {
+                    Name = "Punto Principal - Verace Pizza",
+                    Address = "Av. de los Shyris N35-52",
+                    Descripcion = "Punto de recolección principal",
+                    Latitude = -0.180653,
+                    Longitude = -78.487834,
+                    SucursalId = sucursal.Id
+                },
+            };
+
+            _context.CollectionPoints.AddRange(puntosDefault);
+            await _context.SaveChangesAsync();
+        }
+
         [HttpPost]
         public async Task<IActionResult> Confirmar(int id)
         {
+            // Mantener los datos en TempData
+            TempData.Keep("ProductosSeleccionados");
+            TempData.Keep("DatosCarrito");
+
             // Obtener el punto de recolección
             var puntoRecoleccion = await _context.CollectionPoints
                 .Include(p => p.Sucursal)
@@ -67,14 +128,12 @@ namespace Proyecto1_MZ_MJ.Controllers
             {
                 string productosJson = TempData["ProductosSeleccionados"].ToString();
                 var productosSeleccionados = System.Text.Json.JsonSerializer.Deserialize<List<ProductoSeleccionadoInput>>(productosJson);
-                // Necesitas implementar este método en PedidosController o en un servicio
                 pedidoId = await CrearPedidoDesdeSeleccionMultiple(productosSeleccionados, puntoRecoleccion.SucursalId);
             }
             // Verificamos si viene del carrito
             else if (TempData.ContainsKey("DatosCarrito"))
             {
                 string carritoJson = TempData["DatosCarrito"].ToString();
-                // Necesitas implementar este método en PedidosController o en un servicio
                 pedidoId = await CrearPedidoDesdeCarrito(carritoJson, puntoRecoleccion.SucursalId);
             }
             else
@@ -94,7 +153,6 @@ namespace Proyecto1_MZ_MJ.Controllers
             return RedirectToAction("Resumen", "Pedidos", new { id = pedidoId });
         }
 
-        // Implementa estos métodos aquí o usa métodos de PedidosController
         private async Task<int> CrearPedidoDesdeSeleccionMultiple(List<ProductoSeleccionadoInput> seleccionados, int sucursalId)
         {
             var pedido = new Pedido

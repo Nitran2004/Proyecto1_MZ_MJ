@@ -25,6 +25,9 @@
         public int? Calificacion { get; set; } // 1-5 estrellas
         public bool ComentarioEnviado { get; set; } = false;
 
+        // Añadir referencia al punto de recolección
+        public int? PuntoRecoleccionId { get; set; }
+        public CollectionPoint PuntoRecoleccion { get; set; }
     }
 
 

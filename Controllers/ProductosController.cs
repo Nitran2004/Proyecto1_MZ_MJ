@@ -142,6 +142,8 @@ namespace Proyecto1_MZ_MJ.Controllers
         // 1. Primero, modificación al método en ProductosController para la selección múltiple
         // Ubicación: ProductosController.cs, método de procesamiento del formulario
 
+        // En ProductosController.cs, actualiza este método:
+
         [HttpPost]
         public IActionResult ProcesarSeleccionMultiple(List<ProductoSeleccionadoInput> seleccionados)
         {
@@ -150,8 +152,17 @@ namespace Proyecto1_MZ_MJ.Controllers
                 .Where(p => p.Seleccionado && p.Cantidad > 0)
                 .ToList();
 
+            if (!seleccionadosValidos.Any())
+            {
+                TempData["Error"] = "No se seleccionaron productos";
+                return RedirectToAction("SeleccionMultiple");
+            }
+
             // Guardamos en TempData
             TempData["ProductosSeleccionados"] = System.Text.Json.JsonSerializer.Serialize(seleccionadosValidos);
+
+            // Importante: mantener TempData hasta que se use
+            TempData.Keep("ProductosSeleccionados");
 
             // Redireccionamos a la selección de punto de recolección
             return RedirectToAction("Seleccionar", "Recoleccion");

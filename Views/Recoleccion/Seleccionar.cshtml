@@ -25,6 +25,7 @@
                                 </p>
                             </div>
                             <div class="card-footer bg-transparent">
+                                @* IMPORTANTE: Este formulario debe usar POST *@
                                 <form asp-action="Confirmar" asp-controller="Recoleccion" method="post">
                                     <input type="hidden" name="id" value="@punto.Id" />
                                     <button type="submit" class="btn btn-primary w-100">Seleccionar</button>
